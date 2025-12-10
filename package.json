@@ -1,0 +1,16 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "Aplikacja nie Generuje Prawdziwych dowodów osobistych i jest wyłącznie przeznaczona do użytku osobistego.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "html-minifier-terser": "^7.2.0",
+    "terser": "^5.44.1"
+  }
+}

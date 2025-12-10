@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>mObywatel</title>
+    <link rel="stylesheet" href="assets/id.css?v=1.5">
+    <link rel="stylesheet" href="assets/main.css">
+    <link rel="icon" type="image/x-icon" href="https://i.imgur.com/U7TRg0V.png">
+    <link rel="apple-touch-icon" href="https://i.imgur.com/U7TRg0V.png">
+    <link rel="shortcut icon" href="https://i.imgur.com/U7TRg0V.png">
+    <meta name="theme-color" content="#121212">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width,initial-scale=0.8,user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+    <script>
+        async function loadDocument() {
+            const API_URL = window.location.origin;
+            const urlParams = new URLSearchParams(window.location.search);
+            const docId = urlParams.get('doc_id');
+            const userId = urlParams.get('user_id');
+            const isToken = urlParams.get('token') === 'true';
+
+            if (!docId || (!userId && !isToken)) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            try {
+                const fetchUrl = isToken 
+                    ? `${API_URL}/api/documents/${docId}?token=true`
+                    : `${API_URL}/api/documents/${docId}?user_id=${userId}`;
+                const response = await fetch(fetchUrl);
+                if (!response.ok) {
+                    throw new Error('Failed to load');
+                }
+                const data = await response.json();
+                
+                let birthday = data.birthday || '';
+                if (birthday && birthday.includes('-')) {
+                    const parts = birthday.split('-');
+                    birthday = `${parts[2]}.${parts[1]}.${parts[0]}`;
+                }
+                
+                const newParams = new URLSearchParams();
+                newParams.set('name', data.name || '');
+                newParams.set('surname', data.surname || '');
+                newParams.set('sex', data.sex || '');
+                newParams.set('birthday', birthday);
+                newParams.set('pesel', data.pesel || '');
+                newParams.set('mdow_series', data.mdow_series || '');
+                newParams.set('issue_date', data.issue_date || '');
+                newParams.set('expiry_date', data.expiry_date || '');
+                newParams.set('father_name', data.father_name || '');
+                newParams.set('mother_name', data.mother_name || '');
+                newParams.set('nationality', data.nationality || '');
+                newParams.set('birthPlace', data.birthPlace || '');
+                newParams.set('countryOfBirth', data.birth_country || '');
+                newParams.set('adress1', data.adress1 || '');
+                newParams.set('adress2', data.adress2 || '');
+                newParams.set('city', data.city || '');
+                newParams.set('home_date', data.home_date || '');
+                newParams.set('familyName', data.family_name || '');
+                newParams.set('fathersFamilyName', data.father_family_name || '');
+                newParams.set('mothersFamilyName', data.mother_family_name || '');
+                newParams.set('image', data.image || '');
+                
+                window.location.search = newParams.toString();
+            } catch (e) {
+                console.error('Error:', e);
+                window.location.href = '/login.html';
+            }
+        }
+
+        loadDocument();
+    </script>
+    <script src="assets/id.js?v=1.1"></script>
+    <script src="assets/card.js?v=1.1"></script>
+    <script src="assets/manifest.js"></script>
+</body>
+</html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="mObywatel">
+    <meta name="theme-color" content="#09020e">
+    <link rel="manifest" href="/manifest.json">
+    <title>mObywatel v4.0 | Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        :root{--bg-dark:#09020e;--bg-mid:#1c0a27;--text-light:#eeeeee;--text-subtle:#777777;--glass-fill:rgba(255,255,255,0.05);--border-clear:rgba(150,0,255,0.3);--accent-purple:#9c27b0;--accent-glow:rgba(150,0,255,0.6);--shadow-button:rgba(150,0,255,0.4);--error-red:#ff3333;--success-green:#33ff33;--accent-blue:#3366ff}
+        body{font-family:Inter,sans-serif;background-color:var(--bg-dark);color:var(--text-light);display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:100vh;margin:0;padding:20px;box-sizing:border-box;background-image:radial-gradient(circle at top left,var(--bg-mid) 5%,transparent 40%),radial-gradient(circle at bottom right,rgba(150,0,255,0.1) 0,transparent 45%)}
+        .container{background:var(--glass-fill);backdrop-filter:blur(20px) brightness(1.1);-webkit-backdrop-filter:blur(20px) brightness(1.1);padding:30px;border-radius:28px;border:1px solid var(--border-clear);box-shadow:0 10px 40px rgba(0,0,0,0.9),0 0 20px var(--accent-glow) inset;width:100%;max-width:350px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+        h1{color:var(--text-light);text-align:center;margin-bottom:20px;font-weight:700;letter-spacing:1.5px;font-size:1.6rem;text-shadow:0 0 10px var(--accent-purple);border-bottom:1px solid var(--border-clear);padding-bottom:15px}
+        .token-info{background:rgba(0,100,0,0.2);border:1px solid #2e7d32;border-radius:8px;padding:12px;margin-bottom:20px;text-align:center}
+        .token-info.error{background:rgba(100,0,0,0.2);border-color:#f33}
+        .form-group{margin-bottom:18px;position:relative}
+        label{display:block;margin-bottom:6px;font-weight:600;color:var(--text-subtle);font-size:0.85rem}
+        input[type="text"],input[type="date"],select{width:100%;padding:14px 12px;border:1px solid var(--border-clear);border-radius:10px;box-sizing:border-box;background-color:rgba(0,0,0,0.5);color:var(--text-light);font-size:1rem;transition:border-color 0.3s,box-shadow 0.3s}
+        input:focus,select:focus{outline:none;border-color:var(--accent-purple);box-shadow:0 0 10px var(--accent-glow)}
+        .file-upload-wrapper{position:relative}
+        input[type="file"]{display:none}
+        .custom-file-upload{display:block;width:100%;padding:14px;border:1px dashed var(--border-clear);border-radius:10px;text-align:center;cursor:pointer;background:rgba(0,0,0,0.3);color:var(--text-subtle);transition:all 0.3s}
+        .custom-file-upload:hover{border-color:var(--accent-purple);color:var(--text-light)}
+        .image-preview-container{display:none;margin-top:10px;text-align:center}
+        .image-preview-container.active{display:block}
+        #imagePreview{max-width:120px;max-height:150px;border-radius:8px;border:2px solid var(--accent-purple)}
+        .autofill-block{margin-bottom:20px;text-align:center}
+        .autofill-block button{padding:10px 20px;background:rgba(150,0,255,0.2);border:1px solid var(--border-clear);border-radius:8px;color:var(--text-light);cursor:pointer;font-weight:600;transition:all 0.3s}
+        .autofill-block button:hover{background:rgba(150,0,255,0.4)}
+        #statusMessage,#statusMessageAutofill{margin-top:10px;text-align:center;font-weight:600}
+        button[type="submit"]{width:100%;padding:16px;background:linear-gradient(135deg,var(--accent-purple),#7b1fa2);border:none;border-radius:12px;color:#fff;font-weight:700;font-size:1.1rem;cursor:pointer;text-transform:uppercase;letter-spacing:2px;box-shadow:0 4px 15px var(--shadow-button);transition:all 0.3s}
+        button[type="submit"]:hover{transform:translateY(-2px);box-shadow:0 6px 20px var(--shadow-button)}
+        button[type="submit"]:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+        .divider{height:1px;background:var(--border-clear);margin:25px 0}
+        .footer-dev{text-align:center;margin-top:20px;color:var(--text-subtle);font-size:0.8rem}
+        .footer-dev span{color:var(--accent-purple)}
+        details.instruction-details{margin-bottom:20px}
+        details summary{cursor:pointer;padding:10px;background:rgba(0,0,0,0.3);border-radius:8px;color:var(--text-subtle)}
+        details .instruction-content{padding:15px;background:rgba(0,0,0,0.2);border-radius:0 0 8px 8px;font-size:0.9rem;line-height:1.6}
+        details ol{padding-left:20px;margin:10px 0}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>mObywatel v4.0</h1>
+        
+        <div id="tokenStatus" class="token-info">
+            Sprawdzanie tokena...
+        </div>
+        
+        <div id="formContainer" style="display:none;">
+            <details class="instruction-details">
+                <summary>INSTRUKCJA <span class="icon">></span></summary>
+                <div class="instruction-content">
+                    <p>Aby aplikacja dzialala jak skrot na pulpicie telefonu (bez paska adresu przegladarki), postepuj zgodnie z krokami.</p>
+                    <strong>System iOS (iPhone):</strong>
+                    <ol>
+                        <li>Upewnij sie, ze uzywasz przegladarki Safari.</li>
+                        <li>Uzupelnij dane i kliknij GENERUJ.</li>
+                        <li>Na nowej stronie nacisnij ikone Udostepnij.</li>
+                        <li>Wybierz opcje Do Ekranu glownego.</li>
+                    </ol>
+                    <strong>System Android:</strong>
+                    <ol>
+                        <li>Upewnij sie, ze uzywasz przegladarki Chrome lub Google.</li>
+                        <li>Uzupelnij dane i kliknij GENERUJ.</li>
+                        <li>Na nowej stronie nacisnij ikone Menu (3 kropki) w prawym gornym rogu.</li>
+                        <li>Wybierz opcje Dodaj do ekranu glownego.</li>
+                    </ol>
+                </div>
+            </details>
+            
+            <form id="dataGenerator">
+                <div class="form-group">
+                    <label for="name">Imie:</label>
+                    <input type="text" id="name" name="name" placeholder="Jan" required>
+                </div>
+                <div class="form-group">
+                    <label for="surname">Nazwisko:</label>
+                    <input type="text" id="surname" name="surname" placeholder="Kowalski" required>
+                </div>
+                <div class="form-group">
+                    <label for="sex">Plec:</label>
+                    <select id="sex" name="sex" required>
+                        <option value="MEZCZYZNA">MEZCZYZNA</option>
+                        <option value="KOBIETA">KOBIETA</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="birthday">Data Urodzenia:</label>
+                    <input type="date" id="birthday" name="birthday" required>
+                </div>
+                <div class="autofill-block">
+                    <button type="button" id="autofillButton">Wypelnij Daty Automatycznie</button>
+                    <div id="statusMessageAutofill"></div> 
+                </div>
+                <div class="form-group">
+                    <label for="pesel">Numer PESEL:</label>
+                    <input type="text" id="pesel" name="pesel" placeholder="11-cyfrowy numer" maxlength="11" pattern="[0-9]{11}" required>
+                </div>
+                <div class="form-group">
+                    <label for="mdow_series">Seria i numer mDowodu:</label>
+                    <input type="text" id="mdow_series" name="mdow_series" placeholder="MWYC XXXXX" required>
+                </div>
+                <div class="form-group">
+                    <label for="issue_date">Data wydania mDowodu (DD.MM.RRRR):</label>
+                    <input type="text" id="issue_date" name="issue_date" placeholder="14.07.2023" maxlength="10" pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}" required>
+                </div>
+                <div class="form-group">
+                    <label for="expiry_date">Termin waznosci mDowodu (DD.MM.RRRR):</label>
+                    <input type="text" id="expiry_date" name="expiry_date" placeholder="14.07.2028" maxlength="10" pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}" required>
+                </div>
+                <div class="form-group">
+                    <label for="father_name">Imie ojca:</label>
+                    <input type="text" id="father_name" name="father_name" placeholder="Maciej" required>
+                </div>
+                <div class="form-group">
+                    <label for="mother_name">Imie matki:</label>
+                    <input type="text" id="mother_name" name="mother_name" placeholder="Ewa" required>
+                </div>
+                <div class="form-group">
+                    <label for="nationality">Obywatelstwo:</label>
+                    <input type="text" id="nationality" name="nationality" placeholder="POLSKIE" required>
+                </div>
+                <div class="form-group">
+                    <label for="birthPlace">Miejsce Urodzenia:</label>
+                    <input type="text" id="birthPlace" name="birthPlace" placeholder="Warszawa" required>
+                </div>
+                <div class="form-group">
+                    <label for="birth_country">Kraj Urodzenia:</label>
+                    <input type="text" id="birth_country" name="birth_country" placeholder="Polska" required>
+                </div>
+                <div class="form-group">
+                    <label for="adress1">Adres (Ulica i numer):</label>
+                    <input type="text" id="adress1" name="adress1" placeholder="Chopina 4/56" required>
+                </div>
+                <div class="form-group">
+                    <label for="adress2">Kod pocztowy / nr:</label>
+                    <input type="text" id="adress2" name="adress2" placeholder="42-250">
+                </div>
+                <div class="form-group">
+                    <label for="city">Miasto:</label>
+                    <input type="text" id="city" name="city" placeholder="Warszawa">
+                </div>
+                <div class="form-group">
+                    <label for="home_date">Data zameldowania (DD.MM.RRRR):</label>
+                    <input type="text" id="home_date" name="home_date" placeholder="01.01.2000" maxlength="10" pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}" required>
+                </div>
+                <div class="form-group">
+                    <label for="family_name">Nazwisko rodowe (Twoje):</label>
+                    <input type="text" id="family_name" name="family_name" placeholder="Kowalski / Panienskie">
+                </div>
+                <div class="form-group">
+                    <label for="father_family_name">Nazwisko rodowe ojca:</label>
+                    <input type="text" id="father_family_name" name="father_family_name" placeholder="Kowalski">
+                </div>
+                <div class="form-group">
+                    <label for="mother_family_name">Nazwisko rodowe matki:</label>
+                    <input type="text" id="mother_family_name" name="mother_family_name" placeholder="Nowak">
+                </div>
+                <div class="divider"></div>
+                <div class="form-group">
+                    <label for="fileInput">Zdjecie:</label>
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="fileInput" accept="image/jpeg, image/png" required>
+                        <label for="fileInput" id="fileLabel" class="custom-file-upload">Wybierz plik...</label>
+                        <label for="fileInput" class="image-preview-container" id="imagePreviewContainer">
+                            <img id="imagePreview" src="#" alt="Podglad zdjecia">
+                        </label>
+                        <input type="hidden" id="image" name="image" value="">
+                    </div>
+                </div>
+                <div id="statusMessage"></div> 
+                <button type="submit" id="generateButton">/// GENERUJ ///</button>
+                <div class="footer-dev">Made by <span>MAMBA</span></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const CLOUD_NAME = 'dijqrebua';
+        const UPLOAD_PRESET = 'eobywatel';
+        const API_URL = window.location.origin;
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        
+        const tokenStatus = document.getElementById('tokenStatus');
+        const formContainer = document.getElementById('formContainer');
+        
+        async function validateToken() {
+            if (!token) {
+                tokenStatus.className = 'token-info error';
+                tokenStatus.textContent = 'Brak tokena! Popros administratora o link.';
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_URL}/api/token/validate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                
+                const data = await res.json();
+                
+                if (data.valid) {
+                    tokenStatus.className = 'token-info';
+                    tokenStatus.textContent = 'Token aktywny - mozesz wygenerowac 1 dokument';
+                    formContainer.style.display = 'block';
+                } else {
+                    tokenStatus.className = 'token-info error';
+                    tokenStatus.textContent = data.error || 'Token nieprawidlowy lub juz uzyty';
+                }
+            } catch (err) {
+                tokenStatus.className = 'token-info error';
+                tokenStatus.textContent = 'Blad walidacji tokena';
+            }
+        }
+        
+        validateToken();
+        
+        const form = document.getElementById('dataGenerator');
+        const fileInput = document.getElementById('fileInput');
+        const imageURLInput = document.getElementById('image');
+        const fileLabel = document.getElementById('fileLabel');
+        const generateButton = document.getElementById('generateButton');
+        const statusMessage = document.getElementById('statusMessage');
+        const statusMessageAutofill = document.getElementById('statusMessageAutofill');
+        const imagePreview = document.getElementById('imagePreview');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        const autofillButton = document.getElementById('autofillButton');
+        
+        const peselInput = document.getElementById('pesel');
+        const issueDateInput = document.getElementById('issue_date');
+        const expiryDateInput = document.getElementById('expiry_date');
+        const homeDateInput = document.getElementById('home_date');
+        const birthdayInput = document.getElementById('birthday');
+        const manualDateFields = [issueDateInput, expiryDateInput, homeDateInput];
+        
+        function formatDateForDisplay(date) {
+            if (!(date instanceof Date) || isNaN(date)) return '';
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}.${month}.${year}`;
+        }
+        
+        function generateRandomFiveDigits() {
+            return Math.floor(10000 + Math.random() * 90000);
+        }
+
+        autofillButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const today = new Date();
+            const minDate = new Date(today.getFullYear() - 30, 0, 1);
+            const maxDate = new Date(today.getFullYear() - 18, 11, 31);
+            const randomBirthday = new Date(minDate.getTime() + Math.random() * (maxDate.getTime() - minDate.getTime()));
+            
+            birthdayInput.value = randomBirthday.toISOString().split('T')[0];
+            
+            const issueDate = new Date(today.getFullYear() - 2, 0, 1);
+            const expiryDate = new Date(today.getFullYear() + 3, 11, 31);
+            
+            issueDateInput.value = formatDateForDisplay(issueDate);
+            expiryDateInput.value = formatDateForDisplay(expiryDate);
+            homeDateInput.value = formatDateForDisplay(today);
+            
+            let pesel = '';
+            for (let i = 0; i < 11; i++) {
+                pesel += Math.floor(Math.random() * 10);
+            }
+            peselInput.value = pesel;
+            
+            document.getElementById('mdow_series').value = `MWYC ${generateRandomFiveDigits()}`;
+            
+            statusMessageAutofill.textContent = 'Daty wypelnione!';
+            statusMessageAutofill.style.color = 'var(--success-green)';
+            setTimeout(() => {
+                statusMessageAutofill.textContent = '';
+            }, 3000);
+        });
+
+        fileInput.addEventListener('change', function() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreviewContainer.classList.add('active');
+            };
+            reader.readAsDataURL(file);
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', UPLOAD_PRESET);
+
+            statusMessage.textContent = 'Uploaduje...';
+            statusMessage.style.color = 'var(--text-subtle)';
+
+            fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                imageURLInput.value = data.secure_url;
+                statusMessage.textContent = 'Zdjecie uploadeone!';
+                statusMessage.style.color = 'var(--success-green)';
+                setTimeout(() => {
+                    statusMessage.textContent = '';
+                }, 2000);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                statusMessage.textContent = 'Blad uploadu!';
+                statusMessage.style.color = 'var(--error-red)';
+            });
+        });
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (!imageURLInput.value) {
+                statusMessage.textContent = 'Musisz wybrac zdjecie!';
+                statusMessage.style.color = 'var(--error-red)';
+                return;
+            }
+
+            const pesel = peselInput.value;
+            if (pesel.length !== 11 || !/^\d{11}$/.test(pesel)) {
+                statusMessage.textContent = 'PESEL musi miec 11 cyfr!';
+                statusMessage.style.color = 'var(--error-red)';
+                return;
+            }
+
+            for (let field of manualDateFields) {
+                const value = field.value;
+                if (!/^\d{2}\.\d{2}\.\d{4}$/.test(value)) {
+                    statusMessage.textContent = 'Zla data! Uzyj formatu DD.MM.RRRR';
+                    statusMessage.style.color = 'var(--error-red)';
+                    return;
+                }
+            }
+
+            const formData = new FormData(form);
+            const data = {
+                token: token,
+                name: formData.get('name'),
+                surname: formData.get('surname'),
+                sex: formData.get('sex'),
+                birthday: formData.get('birthday'),
+                pesel: formData.get('pesel'),
+                mdow_series: formData.get('mdow_series'),
+                issue_date: formData.get('issue_date'),
+                expiry_date: formData.get('expiry_date'),
+                father_name: formData.get('father_name'),
+                mother_name: formData.get('mother_name'),
+                nationality: formData.get('nationality'),
+                birthPlace: formData.get('birthPlace'),
+                birth_country: formData.get('birth_country'),
+                adress1: formData.get('adress1'),
+                adress2: formData.get('adress2'),
+                city: formData.get('city'),
+                home_date: formData.get('home_date'),
+                family_name: formData.get('family_name'),
+                father_family_name: formData.get('father_family_name'),
+                mother_family_name: formData.get('mother_family_name'),
+                image: imageURLInput.value
+            };
+
+            generateButton.disabled = true;
+            statusMessage.textContent = 'Generuje dokument...';
+            statusMessage.style.color = 'var(--text-subtle)';
+
+            try {
+                const saveResponse = await fetch(`${API_URL}/api/documents/save-with-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!saveResponse.ok) {
+                    const errData = await saveResponse.json();
+                    throw new Error(errData.error || 'Failed to save document');
+                }
+
+                const result = await saveResponse.json();
+                const docId = result.doc_id;
+
+                const cardUrl = `/card-view.html?doc_id=${docId}&token=true`;
+                window.open(cardUrl, '_blank');
+
+                statusMessage.textContent = 'Dokument wygenerowany! Token zuzytowany.';
+                statusMessage.style.color = 'var(--success-green)';
+                
+                tokenStatus.className = 'token-info error';
+                tokenStatus.textContent = 'Token zostal uzyty. Nie mozesz wygenerowac wiecej dokumentow.';
+                formContainer.style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                statusMessage.textContent = `Blad: ${error.message}`;
+                statusMessage.style.color = 'var(--error-red)';
+            } finally {
+                generateButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

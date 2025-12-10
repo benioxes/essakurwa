@@ -1,0 +1,43 @@
+{
+  "name": "mObywatel v4.0",
+  "short_name": "mObywatel",
+  "description": "Polski generator mObywatel ID card",
+  "start_url": "/gen.html",
+  "display": "standalone",
+  "scope": "/",
+  "background_color": "#09020e",
+  "theme_color": "#09020e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%239c27b0' width='192' height='192'/><text x='96' y='120' font-size='80' font-weight='bold' text-anchor='middle' fill='white' font-family='Arial'>M</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%239c27b0' width='512' height='512'/><text x='256' y='360' font-size='220' font-weight='bold' text-anchor='middle' fill='white' font-family='Arial'>M</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23111218' width='540' height='720'/><rect fill='%239c27b0' x='20' y='100' width='500' height='200' rx='20'/><text x='270' y='220' font-size='60' font-weight='bold' text-anchor='middle' fill='white' font-family='Arial'>mObywatel</text></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ],
+  "categories": ["utilities"],
+  "shortcuts": [
+    {
+      "name": "Generuj dokument",
+      "short_name": "Generuj",
+      "description": "Szybko wygeneruj dokument tożsamości",
+      "url": "/gen.html",
+      "icons": []
+    }
+  ]
+}

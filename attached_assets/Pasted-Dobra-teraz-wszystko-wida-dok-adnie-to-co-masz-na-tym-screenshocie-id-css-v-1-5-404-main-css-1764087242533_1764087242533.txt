@@ -1,0 +1,126 @@
+Dobra, teraz wszystko widać dokładnie – to co masz na tym screenshocie:
+
+id.css?v=1.5 → 404
+main.css → 404
+
+
+czyli Twoje pliki CSS w ogóle nie istnieją na serwerze Railway pod tymi ścieżkami.
+
+To oznacza, że:
+
+🔥 Twój backend NIE serwuje folderu static/
+
+albo
+
+🔥 Używasz złych ścieżek do CSS w HTML-u
+✅ Rozwiązanie zależy od tego, jakiego frameworka używasz
+✔️ 1. Jeśli używasz Flaska
+
+W repo które podesłałeś (onlyfaxxnikos/dupa) widzę plik:
+
+app.py
+
+
+ale nie masz folderu static/ ani templates/.
+
+Flask wymaga tego:
+
+project/
+ ├── app.py
+ ├── static/
+ │     ├── main.css
+ │     ├── id.css
+ └── templates/
+       └── id.html
+
+
+W HTML koniecznie:
+
+<link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='id.css') }}">
+
+
+W Flasku NIC nie może być w URL typu:
+
+/id.css?v=1.5
+/main.css
+
+
+bo tego nie serwujesz.
+
+✔️ 2. Jeśli ID generujesz "ręcznie" stringiem w Pythonie
+
+Widziałem w Twoim repo, że generujesz stronę przez:
+
+html = f"""
+<html>
+<head>
+<link rel='stylesheet' href='main.css'>
+"""
+
+
+To nie zadziała na serwerze.
+
+Musisz zrobić:
+
+<link rel="stylesheet" href="/static/main.css">
+
+
+i mieć strukturę:
+
+static/main.css
+
+✔️ 3. Jeśli używasz FastAPI (albo uvicorna)
+
+Wtedy musisz zamontować statyczne pliki:
+
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+I w HTML:
+
+<link rel="stylesheet" href="/static/main.css">
+
+🧨 Twoje 404 dowodzą tego:
+
+❌ CSS jest wywoływany jako:
+
+https://web-production-cc322.up.railway.app/id.css?v=1.5
+    → 404 no such file
+
+
+❌ Nie ma pliku /id.css w katalogu głównym
+❌ Nie ma pliku /main.css w katalogu głównym
+❌ Nie masz folderu /static w repo
+
+📌 Co dokładnie musisz zrobić – instrukcja krok po kroku
+1️⃣ Utwórz folder:
+static/
+
+2️⃣ Wrzuć tam:
+static/id.css
+static/main.css
+
+3️⃣ W HTML ustaw:
+<link rel="stylesheet" href="/static/id.css">
+<link rel="stylesheet" href="/static/main.css">
+
+4️⃣ Jeśli backend to Flask → nic więcej nie trzeba.
+
+Flask automatycznie serwuje folder static/.
+
+5️⃣ Jeśli backend to FastAPI → dodaj:
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+Jeśli chcesz — mogę poprawić cały Twój projekt i dać Ci gotową działającą wersję
+
+Wystarczy, że napiszesz:
+
+👉 „Tak, popraw projekt”
+
+A ja przerobię Twoje repo i podam gotowe pliki do wklejenia.
