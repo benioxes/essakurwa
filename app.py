@@ -361,6 +361,20 @@ def get_all_documents():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/admin/documents/<int:doc_id>', methods=['DELETE'])
+def delete_document(doc_id):
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('DELETE FROM generated_documents WHERE id = %s', (doc_id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'message': 'Document deleted'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 import secrets
 
 @app.route('/api/admin/tokens', methods=['GET'])

@@ -285,6 +285,7 @@
                         <th>Nazwisko</th>
                         <th>PESEL</th>
                         <th>Data</th>
+                        <th>Akcje</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -375,8 +376,34 @@
                         <td>${d.surname}</td>
                         <td>${d.pesel}</td>
                         <td>${new Date(d.created_at).toLocaleDateString("pl-PL")}</td>
+                        <td>
+                            <button class="action" onclick="viewDocument(${d.id}, ${d.username ? 'false' : 'true'})">Podglad</button>
+                            <button class="action revoke" onclick="deleteDocument(${d.id})">Usun</button>
+                        </td>
                     </tr>
                 `).join("");
+            } catch (err) {
+                alert("Blad: " + err.message);
+            }
+        }
+
+        function viewDocument(docId, isToken) {
+            const url = `/card-view.html?doc_id=${docId}${isToken ? '&token=true' : ''}`;
+            window.open(url, '_blank');
+        }
+
+        async function deleteDocument(docId) {
+            if (!confirm("Na pewno usunac ten dokument?")) return;
+            try {
+                const res = await fetch(`${API_URL}/api/admin/documents/${docId}`, {
+                    method: "DELETE"
+                });
+                if (res.ok) {
+                    loadDocuments();
+                } else {
+                    const data = await res.json();
+                    alert("Blad: " + data.error);
+                }
             } catch (err) {
                 alert("Blad: " + err.message);
             }
