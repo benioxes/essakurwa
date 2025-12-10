@@ -416,18 +416,25 @@
 
                 const result = await saveResponse.json();
                 const accessToken = result.access_token;
+                const fullUrl = `${window.location.origin}/card-view.html?access=${accessToken}`;
 
-                statusMessage.textContent = 'Dokument wygenerowany! Przekierowuje...';
-                statusMessage.style.color = 'var(--success-green)';
-
-                const cardUrl = `/card-view.html?access=${accessToken}`;
-                window.location.href = cardUrl;
+                formContainer.innerHTML = `
+                    <div style="text-align:center;padding:20px;">
+                        <h2 style="color:var(--success-green);margin-bottom:20px;">✓ Dokument wygenerowany!</h2>
+                        <p style="color:var(--text-subtle);margin-bottom:15px;">Twój bezpieczny link do dokumentu:</p>
+                        <div style="background:rgba(0,0,0,0.5);padding:15px;border-radius:10px;margin-bottom:20px;word-break:break-all;">
+                            <input type="text" id="generatedLink" value="${fullUrl}" readonly style="width:100%;background:transparent;border:none;color:var(--text-light);text-align:center;font-size:0.8rem;">
+                        </div>
+                        <button onclick="navigator.clipboard.writeText('${fullUrl}').then(()=>alert('Skopiowano!'))" style="width:100%;padding:12px;background:rgba(150,0,255,0.3);border:1px solid var(--border-clear);border-radius:10px;color:var(--text-light);cursor:pointer;margin-bottom:10px;font-weight:600;">📋 KOPIUJ LINK</button>
+                        <button onclick="window.location.href='/card-view.html?access=${accessToken}'" style="width:100%;padding:16px;background:linear-gradient(135deg,var(--accent-purple),#7b1fa2);border:none;border-radius:12px;color:#fff;font-weight:700;font-size:1.1rem;cursor:pointer;text-transform:uppercase;letter-spacing:2px;">PRZEJDZ DO DOKUMENTU</button>
+                        <p style="color:var(--text-subtle);margin-top:20px;font-size:0.85rem;">Zapisz ten link - tylko on pozwoli Ci otworzyć dokument!</p>
+                    </div>
+                `;
                 
             } catch (error) {
                 console.error('Error:', error);
                 statusMessage.textContent = `Blad: ${error.message}`;
                 statusMessage.style.color = 'var(--error-red)';
-            } finally {
                 generateButton.disabled = false;
             }
         });
