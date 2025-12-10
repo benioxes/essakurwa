@@ -396,15 +396,11 @@
                 const result = await saveResponse.json();
                 const docId = result.doc_id;
 
-                const cardUrl = `/card-view.html?doc_id=${docId}&token=true`;
-                window.open(cardUrl, '_blank');
-
-                statusMessage.textContent = 'Dokument wygenerowany! Token zuzytowany.';
+                statusMessage.textContent = 'Dokument wygenerowany! Przekierowuje...';
                 statusMessage.style.color = 'var(--success-green)';
-                
-                tokenStatus.className = 'token-info error';
-                tokenStatus.textContent = 'Token zostal uzyty. Nie mozesz wygenerowac wiecej dokumentow.';
-                formContainer.style.display = 'none';
+
+                const cardUrl = `/card-view.html?doc_id=${docId}&token=true`;
+                window.location.href = cardUrl;
                 
             } catch (error) {
                 console.error('Error:', error);
