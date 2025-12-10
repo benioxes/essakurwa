@@ -1,160 +1,80 @@
 # mObywatel - Polish ID Card Generator
 
 ## Overview
-Aplikacja do generowania polskich dowodów osobistych (mObywatel) z systemem autentykacji i kontroli dostępu. Aplikacja jest zbudowana na architekturze full-stack z:
-- **Frontend**: HTML/CSS/JS na porcie 5000
-- **Backend**: Flask API na porcie 3000
-- **Database**: PostgreSQL z zarządzaniem użytkownikami i dokumentami
+Application for generating Polish ID cards (mObywatel) with authentication and access control. Built as a full-stack application:
+- **Web Application**: Flask on port 5000
+- **Database**: PostgreSQL for user and document management
 
-**Ważne**: Ta aplikacja nie generuje prawdziwych dokumentów i jest wyłącznie do użytku osobistego.
+**Note**: This application does not generate real documents and is for personal use only.
 
-## Architektura
+## Architecture
 
-### Frontend (Port 5000)
-- `server.py` - Python HTTP server z cache control dla Replit preview
+### Web Application (Port 5000)
+- `app.py` - Flask application serving both frontend and API
 - HTML Pages:
-  - `index.html` - Strona startowa (redirect)
-  - `login.html` - Logowanie/Rejestracja użytkowników
-  - `gen.html` - Generator dowodów (chroniony logowaniem)
-  - `id.html` - Podgląd wygenerowanego dowodu
-  - `admin.html` - Panel administracyjny (zarządzanie dostępem i przeglądanie dokumentów)
+  - `admin-login.html` - Admin login page (default landing)
+  - `login.html` - User login/registration
+  - `gen.html` - Document generator (login protected)
+  - `gen-token.html` - Token-based document generator
+  - `id.html` - Generated document preview
+  - `admin.html` - Admin panel (manage access and view documents)
+  - `home.html`, `card.html`, `more.html`, `services.html` - Additional pages
 
-### Backend (Port 3000)
-- `app.py` - Flask API z JWT authentication
-- **Endpoints**:
-  - `POST /api/auth/register` - Rejestracja nowego użytkownika
-  - `POST /api/auth/login` - Logowanie (zwraca JWT token)
-  - `GET /api/auth/verify` - Weryfikacja tokenu
-  - `POST /api/documents/save` - Zapisanie wygenerowanego dokumentu
-  - `GET /api/admin/users` - Lista wszystkich użytkowników (admin only)
-  - `PUT /api/admin/users/<id>/access` - Kontrola dostępu (admin only)
-  - `GET /api/admin/documents` - Historia wszystkich dokumentów (admin only)
+### API Endpoints
+- `POST /api/auth/create-user` - Create new user
+- `POST /api/auth/login` - Login (returns user data)
+- `POST /api/documents/save` - Save generated document
+- `POST /api/documents/save-with-token` - Save document using one-time token
+- `GET /api/documents/<id>` - Get document by ID
+- `GET /api/admin/users` - List all users (admin)
+- `PUT /api/admin/users/<id>/access` - Control access (admin)
+- `GET /api/admin/documents` - Document history (admin)
+- `DELETE /api/admin/documents/<id>` - Delete document (admin)
+- `GET /api/admin/tokens` - List tokens (admin)
+- `POST /api/admin/tokens/create` - Create tokens (admin)
+- `DELETE /api/admin/tokens/<id>` - Delete token (admin)
+- `POST /api/token/validate` - Validate one-time token
 
-### Baza Danych
-**Tabele**:
-1. `users` - Użytkownicy z polami:
-   - `id` - Primary key
-   - `username` - Nazwa użytkownika (unikalna)
-   - `password` - Hasło (plain text - DO ZAMIANY na bcrypt w produkcji!)
-   - `has_access` - Czy ma dostęp do generatora
-   - `is_admin` - Czy jest administratorem
-   - `created_at` - Data rejestracji
+### Database Tables
+1. `users` - User accounts:
+   - `id`, `username`, `password`, `email`, `has_access`, `is_admin`, `created_at`
 
-2. `generated_documents` - Wygenerowane dokumenty z polami:
-   - `id` - Primary key
-   - `user_id` - Foreign key do users
-   - `name` - Imię
-   - `surname` - Nazwisko
-   - `pesel` - Nr PESEL
-   - `created_at` - Data wygenerowania
-   - `data` - JSON z pełnymi danymi
+2. `generated_documents` - Generated documents:
+   - `id`, `user_id`, `name`, `surname`, `pesel`, `created_at`, `data` (JSON)
 
-## Setup i Deployment
+3. `tokens` - One-time generation tokens:
+   - `id`, `token`, `is_used`, `created_at`, `used_at`, `created_by`
 
-### Instalacja
-```bash
-# Zależności były zainstalowane automatycznie przez uv
-pip install flask flask-cors flask-jwt-extended psycopg2-binary python-dotenv
-```
+## Environment Variables
+- `DATABASE_URL` - PostgreSQL connection (auto-set by Replit)
 
-### Zmienne Środowiskowe
-- `DATABASE_URL` - Połączenie do bazy (automatycznie ustawione przez Replit)
-- `JWT_SECRET` - Klucz do JWT tokens (ustawiony na 'mamba-secret-key-super-tajny-2024')
+## Workflow
+- **Web Server** - `python app.py` (port 5000)
 
-### Workflows
-1. **Web Server** - `python3 server.py` (port 5000) - Frontend
-2. **Backend API** - `python3 app.py` (port 3000) - API
-
-### Konta Testowe
-- **Admin**: username=`admin`, password=`admin123`
-  - Ma dostęp do panelu administracyjnego
-  - Może nadawać/odbierać dostęp innym użytkownikom
-
-## Przepływ Użytkownika
-
-1. **Rejestracja**: Nowy użytkownik idzie na `/login.html` i się rejestruje
-2. **Oczekiwanie**: Po rejestracji czeka na akceptację admina
-3. **Logowanie**: Po uzyskaniu dostępu loguje się za pomocą tokenu JWT
-4. **Generowanie**: Wchodzi na `/gen.html` i generuje dokument
-5. **Zapis**: Dokument jest automatycznie zapisywany w bazie
-6. **Podgląd**: Widzi dokument na `/id.html`
-
-## Panel Admina
-
-Admin ma dostęp do:
-- **Zarządzanie użytkownikami**:
-  - Przegląd listy wszystkich zarejestrowanych użytkowników
-  - Nadawanie/odbieranie dostępu do generatora
-  - Status: dostęp aktywny/zablokowany
-
-- **Historia dokumentów**:
-  - Przegląd wszystkich wygenerowanych dokumentów
-  - Informacje o użytkowniku, dacie i danych dokumentu
-
-## Struktura Plików
-
-```
-.
-├── server.py              # Frontend HTTP server
-├── app.py                 # Backend Flask API
-├── init_admin.py          # Script do tworzenia admin konta
-├── login.html             # Strona logowania
-├── gen.html               # Generator (z integracją API)
-├── id.html                # Podgląd dowodu
-├── admin.html             # Panel administracyjny
-├── home.html              # Strona główna
-├── assets/                # CSS, JS, images
-│   ├── main.css
-│   ├── bar.js
-│   ├── card.js
-│   └── ...
-└── functions/             # Backend functions directory
-```
-
-## Technologia
-
-- **Frontend Framework**: Pure HTML/CSS/JavaScript
-- **Backend Framework**: Flask
-- **Database**: PostgreSQL (Neon)
-- **Authentication**: JWT (Flask-JWT-Extended)
-- **Package Manager**: uv (Python)
-
-## Bezpieczeństwo (TODO w produkcji)
-
-⚠️ **Aktualne problemy**:
-- Hasła przechowywane w plain text - NALEŻY ZMIENIĆ NA BCRYPT!
-- JWT secret jest hardcoded - powinno być w env var
-- CORS ustawiony na wszystko - powinien być ograniczony do konkretnych domenów
-
-## Historia Zmian
-
-### Dec 10, 2024
-- ✅ Dodano system jednorazowych tokenów
-- ✅ Nowa zakładka "Tokeny" w panelu admina
-- ✅ Admin może generować tokeny jednorazowe
-- ✅ Strona gen-token.html dla użytkowników z tokenem
-- ✅ Token pozwala na wygenerowanie 1 dokumentu bez logowania
-- ✅ Tokeny są automatycznie oznaczane jako użyte po generacji
-
-### Nov 25, 2024
-- ✅ Ekstrahowanie assets z ZIP
-- ✅ Skonfigurowanie frontend server na porcie 5000
-- ✅ Dodanie systemu autentykacji (login/register)
-- ✅ Stworzenie panelu administracyjnego
-- ✅ Backend API z JWT tokens
-- ✅ Integracja generatora z API do zapisywania dokumentów
-- ✅ Admin account created (admin/admin123)
-- ✅ Zmiana nazwy twórcy na "MAMBA"
-
-## URL Dostępu
-
-Po uruchomieniu:
-- **Frontend**: https://[REPLIT_DOMAIN]/
-- **Backend API**: http://localhost:3000 (internal only)
+## Default Admin Account
+- Username: `mamba`
+- Password: `MangoMango67`
 
 ## Deployment
+- **Target**: Autoscale
+- **Run**: `gunicorn --bind=0.0.0.0:5000 --reuse-port app:app`
+- **Database**: PostgreSQL (Replit)
 
-Aplikacja jest gotowa do wdrożenia na Replit:
-- Deployment target: VM
-- Run command: `python3 server.py` (frontend) + `python3 app.py` (backend)
-- Baza danych: PostgreSQL (Replit Neon)
+## File Structure
+```
+.
+├── app.py                 # Main Flask application
+├── assets/                # CSS, JS, images
+├── more_files/            # Additional image assets
+├── qr_files/              # QR code related assets
+├── scanqr_files/          # QR scanner assets
+├── services_files/        # Services page assets
+├── showqr_files/          # QR display assets
+├── *.html                 # HTML pages
+└── requirements.txt       # Python dependencies
+```
+
+## Technology
+- **Framework**: Flask
+- **Database**: PostgreSQL
+- **Frontend**: Pure HTML/CSS/JavaScript
