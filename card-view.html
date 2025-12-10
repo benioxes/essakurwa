@@ -21,6 +21,10 @@
             const API_URL = window.location.origin;
             const urlParams = new URLSearchParams(window.location.search);
             const accessToken = urlParams.get('access');
+            
+            if (urlParams.has('name') && urlParams.has('pesel')) {
+                return;
+            }
 
             if (!accessToken) {
                 window.location.href = '/login.html';
