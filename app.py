@@ -398,17 +398,28 @@ def get_tokens():
 @app.route('/api/admin/tokens/create', methods=['POST'])
 def create_token():
     try:
-        token = secrets.token_hex(16)
+        data = request.get_json() or {}
+        count = min(int(data.get('count', 1)), 50)
+        
         conn = get_db()
         cur = conn.cursor(row_factory=dict_row)
-        cur.execute(
-            'INSERT INTO tokens (token) VALUES (%s) RETURNING id, token',
-            (token,))
-        result = cur.fetchone()
+        
+        created_tokens = []
+        for _ in range(count):
+            token = secrets.token_hex(16)
+            cur.execute(
+                'INSERT INTO tokens (token) VALUES (%s) RETURNING id, token',
+                (token,))
+            result = cur.fetchone()
+            created_tokens.append({'id': result['id'], 'token': result['token']})
+        
         conn.commit()
         cur.close()
         conn.close()
-        return jsonify({'id': result['id'], 'token': result['token']}), 201
+        
+        if count == 1:
+            return jsonify(created_tokens[0]), 201
+        return jsonify({'tokens': created_tokens, 'count': len(created_tokens)}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

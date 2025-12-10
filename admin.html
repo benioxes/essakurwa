@@ -245,16 +245,27 @@
         <div id="tokens" class="tab-content">
             <h2>Jednorazowe tokeny</h2>
             <div class="token-box">
-                <h3>Generuj nowy token</h3>
+                <h3>Generuj nowe tokeny</h3>
                 <p style="margin-bottom:15px;color:#777;">Token pozwala na stworzenie jednego dokumentu bez logowania.</p>
-                <button class="create-token-btn" onclick="createToken()">Wygeneruj nowy token</button>
+                <div class="form-group" style="max-width:200px;margin-bottom:15px;">
+                    <label for="tokenCount">Ilosc tokenow (1-50):</label>
+                    <input type="number" id="tokenCount" value="1" min="1" max="50">
+                </div>
+                <button class="create-token-btn" onclick="createToken()">Wygeneruj tokeny</button>
                 <div id="newTokenResult">
-                    <strong>Nowy token:</strong>
-                    <div class="token-display" id="newTokenValue"></div>
-                    <strong>Link dla uzytkownika:</strong>
-                    <div class="token-display">
-                        <a href="#" id="newTokenLink" class="token-link" target="_blank"></a>
-                        <button class="copy-btn" onclick="copyTokenLink()">Kopiuj</button>
+                    <div id="singleTokenResult" style="display:none;">
+                        <strong>Nowy token:</strong>
+                        <div class="token-display" id="newTokenValue"></div>
+                        <strong>Link dla uzytkownika:</strong>
+                        <div class="token-display">
+                            <a href="#" id="newTokenLink" class="token-link" target="_blank"></a>
+                            <button class="copy-btn" onclick="copyTokenLink()">Kopiuj</button>
+                        </div>
+                    </div>
+                    <div id="multiTokenResult" style="display:none;">
+                        <strong>Wygenerowano <span id="tokenCountResult"></span> tokenow:</strong>
+                        <div id="multiTokenLinks" style="max-height:300px;overflow-y:auto;margin-top:10px;"></div>
+                        <button class="copy-btn" style="margin-top:10px;" onclick="copyAllLinks()">Kopiuj wszystkie linki</button>
                     </div>
                 </div>
             </div>
@@ -435,29 +446,58 @@
             }
         }
 
+        let generatedLinks = [];
+
         async function createToken() {
             try {
+                const count = parseInt(document.getElementById("tokenCount").value) || 1;
                 const res = await fetch(`${API_URL}/api/admin/tokens/create`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" }
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ count })
                 });
                 if (!res.ok) throw new Error("Failed to create token");
                 const data = await res.json();
                 
-                const tokenValue = document.getElementById("newTokenValue");
-                const tokenLink = document.getElementById("newTokenLink");
                 const result = document.getElementById("newTokenResult");
+                const singleResult = document.getElementById("singleTokenResult");
+                const multiResult = document.getElementById("multiTokenResult");
                 
-                const link = `${window.location.origin}/gen-token.html?token=${data.token}`;
-                tokenValue.textContent = data.token;
-                tokenLink.href = link;
-                tokenLink.textContent = link;
+                if (data.tokens) {
+                    singleResult.style.display = "none";
+                    multiResult.style.display = "block";
+                    document.getElementById("tokenCountResult").textContent = data.count;
+                    
+                    generatedLinks = data.tokens.map(t => `${window.location.origin}/gen-token.html?token=${t.token}`);
+                    
+                    document.getElementById("multiTokenLinks").innerHTML = data.tokens.map(t => {
+                        const link = `${window.location.origin}/gen-token.html?token=${t.token}`;
+                        return `<div class="token-display" style="margin-bottom:5px;font-size:0.85rem;">
+                            <a href="${link}" class="token-link" target="_blank">${link}</a>
+                        </div>`;
+                    }).join("");
+                } else {
+                    singleResult.style.display = "block";
+                    multiResult.style.display = "none";
+                    
+                    const link = `${window.location.origin}/gen-token.html?token=${data.token}`;
+                    generatedLinks = [link];
+                    document.getElementById("newTokenValue").textContent = data.token;
+                    document.getElementById("newTokenLink").href = link;
+                    document.getElementById("newTokenLink").textContent = link;
+                }
+                
                 result.classList.add("show");
-                
                 loadTokens();
             } catch (err) {
                 alert("Blad: " + err.message);
             }
+        }
+
+        function copyAllLinks() {
+            navigator.clipboard.writeText(generatedLinks.join("\n")).then(() => {
+                alert("Wszystkie linki skopiowane!");
+            });
         }
 
         function copyLink(token) {
