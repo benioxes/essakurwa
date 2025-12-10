@@ -195,6 +195,13 @@
         #newTokenResult.show {
             display: block;
         }
+        .link-item {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(150, 0, 255, .1);
+        }
+        .link-item:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
@@ -208,6 +215,7 @@
             <button class="tab" onclick='switchTab("create")'>Stworz konto</button>
             <button class="tab" onclick='switchTab("tokens")'>Tokeny</button>
             <button class="tab" onclick='switchTab("documents")'>Dokumenty</button>
+            <button class="tab" onclick='switchTab("links")'>Linki</button>
         </div>
         
         <div id="users" class="tab-content active">
@@ -301,6 +309,42 @@
                 </thead>
                 <tbody></tbody>
             </table>
+        </div>
+        
+        <div id="links" class="tab-content">
+            <h2>Linki do stron</h2>
+            
+            <div class="token-box">
+                <h3>Panel Administratora</h3>
+                <div class="link-item"><a href="/admin-login.html" target="_blank" class="token-link">/admin-login.html</a> - Logowanie do panelu admina</div>
+                <div class="link-item"><a href="/admin.html" target="_blank" class="token-link">/admin.html</a> - Panel administratora</div>
+            </div>
+            
+            <div class="token-box">
+                <h3>Logowanie i Generowanie</h3>
+                <div class="link-item"><a href="/login.html" target="_blank" class="token-link">/login.html</a> - Logowanie uzytkownika</div>
+                <div class="link-item"><a href="/gen.html" target="_blank" class="token-link">/gen.html</a> - Generator (dla zalogowanych)</div>
+                <div class="link-item"><a href="/gen-token.html" target="_blank" class="token-link">/gen-token.html?token=XXX</a> - Generator z tokenem jednorazowym</div>
+            </div>
+            
+            <div class="token-box">
+                <h3>Widoki Dokumentu</h3>
+                <div class="link-item"><a href="/id.html" target="_blank" class="token-link">/id.html</a> - Widok dowodu osobistego</div>
+                <div class="link-item"><a href="/card-view.html" target="_blank" class="token-link">/card-view.html</a> - Widok karty</div>
+                <div class="link-item"><a href="/home.html" target="_blank" class="token-link">/home.html</a> - Strona glowna aplikacji</div>
+            </div>
+            
+            <div class="token-box">
+                <h3>Pozostale Strony</h3>
+                <div class="link-item"><a href="/more.html" target="_blank" class="token-link">/more.html</a> - Wiecej opcji</div>
+                <div class="link-item"><a href="/moreid.html" target="_blank" class="token-link">/moreid.html</a> - Wiecej info o dowodzie</div>
+                <div class="link-item"><a href="/pesel.html" target="_blank" class="token-link">/pesel.html</a> - Strona PESEL</div>
+                <div class="link-item"><a href="/qr.html" target="_blank" class="token-link">/qr.html</a> - Strona QR</div>
+                <div class="link-item"><a href="/showqr.html" target="_blank" class="token-link">/showqr.html</a> - Pokazywanie QR</div>
+                <div class="link-item"><a href="/scanqr.html" target="_blank" class="token-link">/scanqr.html</a> - Skanowanie QR</div>
+                <div class="link-item"><a href="/services.html" target="_blank" class="token-link">/services.html</a> - Uslugi</div>
+                <div class="link-item"><a href="/shortcuts.html" target="_blank" class="token-link">/shortcuts.html</a> - Skroty</div>
+            </div>
         </div>
     </div>
 
