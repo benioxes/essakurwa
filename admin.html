@@ -264,16 +264,12 @@
                     <div id="singleTokenResult" style="display:none;">
                         <strong>Nowy token:</strong>
                         <div class="token-display" id="newTokenValue"></div>
-                        <strong>Link dla uzytkownika:</strong>
-                        <div class="token-display">
-                            <a href="#" id="newTokenLink" class="token-link" target="_blank"></a>
-                            <button class="copy-btn" onclick="copyTokenLink()">Kopiuj</button>
-                        </div>
+                        <button class="copy-btn" style="margin-top:10px;" onclick="copyAllLinks()">Kopiuj token</button>
                     </div>
                     <div id="multiTokenResult" style="display:none;">
                         <strong>Wygenerowano <span id="tokenCountResult"></span> tokenow:</strong>
                         <div id="multiTokenLinks" style="max-height:300px;overflow-y:auto;margin-top:10px;"></div>
-                        <button class="copy-btn" style="margin-top:10px;" onclick="copyAllLinks()">Kopiuj wszystkie linki</button>
+                        <button class="copy-btn" style="margin-top:10px;" onclick="copyAllLinks()">Kopiuj wszystkie tokeny</button>
                     </div>
                 </div>
             </div>
@@ -324,7 +320,7 @@
                 <h3>Logowanie i Generowanie</h3>
                 <div class="link-item"><a href="/login.html" target="_blank" class="token-link">/login.html</a> - Logowanie uzytkownika</div>
                 <div class="link-item"><a href="/gen.html" target="_blank" class="token-link">/gen.html</a> - Generator (dla zalogowanych)</div>
-                <div class="link-item"><a href="/gen-token.html" target="_blank" class="token-link">/gen-token.html?token=XXX</a> - Generator z tokenem jednorazowym</div>
+                <div class="link-item"><a href="/gen-token.html" target="_blank" class="token-link">/gen-token.html</a> - Generator z tokenem (uzytkownik wpisuje token)</div>
             </div>
             
             <div class="token-box">
@@ -512,23 +508,19 @@
                     multiResult.style.display = "block";
                     document.getElementById("tokenCountResult").textContent = data.count;
                     
-                    generatedLinks = data.tokens.map(t => `${window.location.origin}/gen-token.html?token=${t.token}`);
+                    generatedLinks = data.tokens.map(t => t.token);
                     
                     document.getElementById("multiTokenLinks").innerHTML = data.tokens.map(t => {
-                        const link = `${window.location.origin}/gen-token.html?token=${t.token}`;
-                        return `<div class="token-display" style="margin-bottom:5px;font-size:0.85rem;">
-                            <a href="${link}" class="token-link" target="_blank">${link}</a>
+                        return `<div class="token-display" style="margin-bottom:5px;font-size:0.85rem;font-family:monospace;">
+                            ${t.token}
                         </div>`;
                     }).join("");
                 } else {
                     singleResult.style.display = "block";
                     multiResult.style.display = "none";
                     
-                    const link = `${window.location.origin}/gen-token.html?token=${data.token}`;
-                    generatedLinks = [link];
+                    generatedLinks = [data.token];
                     document.getElementById("newTokenValue").textContent = data.token;
-                    document.getElementById("newTokenLink").href = link;
-                    document.getElementById("newTokenLink").textContent = link;
                 }
                 
                 result.classList.add("show");
@@ -540,21 +532,13 @@
 
         function copyAllLinks() {
             navigator.clipboard.writeText(generatedLinks.join("\n")).then(() => {
-                alert("Wszystkie linki skopiowane!");
+                alert("Tokeny skopiowane!");
             });
         }
 
         function copyLink(token) {
-            const link = `${window.location.origin}/gen-token.html?token=${token}`;
-            navigator.clipboard.writeText(link).then(() => {
-                alert("Link skopiowany!");
-            });
-        }
-
-        function copyTokenLink() {
-            const link = document.getElementById("newTokenLink").href;
-            navigator.clipboard.writeText(link).then(() => {
-                alert("Link skopiowany!");
+            navigator.clipboard.writeText(token).then(() => {
+                alert("Token skopiowany!");
             });
         }
 

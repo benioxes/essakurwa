@@ -48,8 +48,17 @@
     <div class="container">
         <h1>mObywatel v4.0</h1>
         
-        <div id="tokenStatus" class="token-info">
-            Sprawdzanie tokena...
+        <div id="tokenInputContainer">
+            <div class="form-group">
+                <label for="tokenInput">Wpisz token dostepu:</label>
+                <input type="text" id="tokenInput" placeholder="Wpisz token..." style="text-align:center;font-family:monospace;">
+            </div>
+            <button type="button" id="validateTokenBtn" onclick="validateTokenManual()" style="width:100%;padding:16px;background:linear-gradient(135deg,var(--accent-purple),#7b1fa2);border:none;border-radius:12px;color:#fff;font-weight:700;font-size:1rem;cursor:pointer;">SPRAWDZ TOKEN</button>
+            <div id="tokenError" style="margin-top:15px;text-align:center;color:var(--error-red);display:none;"></div>
+        </div>
+        
+        <div id="tokenStatus" class="token-info" style="display:none;">
+            Token aktywny - mozesz wygenerowac 1 dokument
         </div>
         
         <div id="formContainer" style="display:none;">
@@ -186,43 +195,55 @@
         const UPLOAD_PRESET = 'eobywatel';
         const API_URL = window.location.origin;
         
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
+        let token = null;
         
+        const tokenInputContainer = document.getElementById('tokenInputContainer');
+        const tokenInput = document.getElementById('tokenInput');
+        const tokenError = document.getElementById('tokenError');
         const tokenStatus = document.getElementById('tokenStatus');
         const formContainer = document.getElementById('formContainer');
         
-        async function validateToken() {
-            if (!token) {
-                tokenStatus.className = 'token-info error';
-                tokenStatus.textContent = 'Brak tokena! Popros administratora o link.';
+        async function validateTokenManual() {
+            const inputToken = tokenInput.value.trim();
+            
+            if (!inputToken) {
+                tokenError.textContent = 'Wpisz token!';
+                tokenError.style.display = 'block';
                 return;
             }
+            
+            tokenError.style.display = 'none';
             
             try {
                 const res = await fetch(`${API_URL}/api/token/validate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token })
+                    body: JSON.stringify({ token: inputToken })
                 });
                 
                 const data = await res.json();
                 
                 if (data.valid) {
-                    tokenStatus.className = 'token-info';
-                    tokenStatus.textContent = 'Token aktywny - mozesz wygenerowac 1 dokument';
+                    token = inputToken;
+                    tokenInputContainer.style.display = 'none';
+                    tokenStatus.style.display = 'block';
                     formContainer.style.display = 'block';
                 } else {
-                    tokenStatus.className = 'token-info error';
-                    tokenStatus.textContent = data.error || 'Token nieprawidlowy lub juz uzyty';
+                    tokenError.textContent = data.error || 'Token nieprawidlowy lub juz uzyty';
+                    tokenError.style.display = 'block';
                 }
             } catch (err) {
-                tokenStatus.className = 'token-info error';
-                tokenStatus.textContent = 'Blad walidacji tokena';
+                tokenError.textContent = 'Blad walidacji tokena';
+                tokenError.style.display = 'block';
             }
         }
         
-        validateToken();
+        tokenInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                validateTokenManual();
+            }
+        });
         
         const form = document.getElementById('dataGenerator');
         const fileInput = document.getElementById('fileInput');
