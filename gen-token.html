@@ -415,12 +415,12 @@
                 }
 
                 const result = await saveResponse.json();
-                const docId = result.doc_id;
+                const accessToken = result.access_token;
 
                 statusMessage.textContent = 'Dokument wygenerowany! Przekierowuje...';
                 statusMessage.style.color = 'var(--success-green)';
 
-                const cardUrl = `/card-view.html?doc_id=${docId}&token=true`;
+                const cardUrl = `/card-view.html?access=${accessToken}`;
                 window.location.href = cardUrl;
                 
             } catch (error) {

@@ -323,10 +323,9 @@
                 }
 
                 const result = await saveResponse.json();
-                const docId = result.doc_id;
-                const userId = localStorage.getItem('user_id');
+                const accessToken = result.access_token;
 
-                const cardUrl = `/card-view.html?doc_id=${docId}&user_id=${userId}`;
+                const cardUrl = `/card-view.html?access=${accessToken}`;
                 window.open(cardUrl, '_blank');
 
                 statusMessage.textContent = '✓ Dokument wygenerowany!';

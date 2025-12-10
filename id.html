@@ -26,12 +26,18 @@
         async function loadAndDisplay() {
             const API_URL = window.location.origin;
             const urlParams = new URLSearchParams(window.location.search);
-            const docId = urlParams.get('doc_id');
-            const userId = urlParams.get('user_id');
+            const accessToken = urlParams.get('access');
 
-            if (docId && userId) {
+            if (accessToken) {
                 try {
-                    const response = await fetch(`${API_URL}/api/documents/${docId}?user_id=${userId}`);
+                    const response = await fetch(`${API_URL}/api/documents/access/${accessToken}`);
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        alert(error.error || 'Nie można załadować dokumentu');
+                        return;
+                    }
+                    
                     const data = await response.json();
                     
                     let birthday = data.birthday || '';
@@ -66,6 +72,7 @@
                     window.location.search = newSearch.toString();
                 } catch (e) {
                     console.error('Error:', e);
+                    alert('Błąd podczas ładowania dokumentu');
                 }
             }
         }

@@ -20,23 +20,22 @@
         async function loadDocument() {
             const API_URL = window.location.origin;
             const urlParams = new URLSearchParams(window.location.search);
-            const docId = urlParams.get('doc_id');
-            const userId = urlParams.get('user_id');
-            const isToken = urlParams.get('token') === 'true';
+            const accessToken = urlParams.get('access');
 
-            if (!docId || (!userId && !isToken)) {
+            if (!accessToken) {
                 window.location.href = '/login.html';
                 return;
             }
 
             try {
-                const fetchUrl = isToken 
-                    ? `${API_URL}/api/documents/${docId}?token=true`
-                    : `${API_URL}/api/documents/${docId}?user_id=${userId}`;
-                const response = await fetch(fetchUrl);
+                const response = await fetch(`${API_URL}/api/documents/access/${accessToken}`);
+                
                 if (!response.ok) {
-                    throw new Error('Failed to load');
+                    const error = await response.json();
+                    alert(error.error || 'Nie można załadować dokumentu');
+                    return;
                 }
+                
                 const data = await response.json();
                 
                 let birthday = data.birthday || '';
@@ -71,7 +70,7 @@
                 window.location.search = newParams.toString();
             } catch (e) {
                 console.error('Error:', e);
-                window.location.href = '/login.html';
+                alert('Błąd podczas ładowania dokumentu');
             }
         }
 

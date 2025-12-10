@@ -97,7 +97,22 @@ def init_db():
                 created_by INTEGER REFERENCES users(id)
             )
         ''')
-        print("Generated documents table created/verified")
+        print("Tokens table created/verified")
+        
+        # Document access tokens table for secure links
+        print("Creating doc_access_tokens table...")
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS doc_access_tokens (
+                id SERIAL PRIMARY KEY,
+                doc_id INTEGER REFERENCES generated_documents(id) ON DELETE CASCADE,
+                access_token VARCHAR(128) UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                expires_at TIMESTAMP,
+                max_views INTEGER DEFAULT NULL,
+                view_count INTEGER DEFAULT 0
+            )
+        ''')
+        print("Doc access tokens table created/verified")
 
         # Seed admin user if not exists
         print("Checking for admin user...")
@@ -266,38 +281,69 @@ def save_document():
             (user_id, data.get('name'), data.get('surname'), data.get('pesel'),
              json.dumps(data)))
         doc_id = cur.fetchone()[0]
+        
+        # Generate secure access token
+        access_token = secrets.token_urlsafe(48)
+        cur.execute(
+            '''
+            INSERT INTO doc_access_tokens (doc_id, access_token)
+            VALUES (%s, %s)
+            ''',
+            (doc_id, access_token))
+        
         conn.commit()
         cur.close()
         conn.close()
-        return jsonify({'doc_id': doc_id}), 201
+        return jsonify({'doc_id': doc_id, 'access_token': access_token}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/documents/<int:doc_id>', methods=['GET'])
-def get_document(doc_id):
-    user_id = request.args.get('user_id')
-    is_token = request.args.get('token') == 'true'
+@app.route('/api/documents/access/<access_token>', methods=['GET'])
+def get_document_by_token(access_token):
+    """Secure document access via encrypted token only"""
     try:
         conn = get_db()
         cur = conn.cursor(row_factory=dict_row)
         
-        if is_token:
-            cur.execute(
-                'SELECT * FROM generated_documents WHERE id = %s AND user_id IS NULL',
-                (doc_id,))
-        else:
-            cur.execute(
-                'SELECT * FROM generated_documents WHERE id = %s AND user_id = %s',
-                (doc_id, user_id))
+        # Find document by access token
+        cur.execute('''
+            SELECT d.*, t.expires_at, t.max_views, t.view_count
+            FROM doc_access_tokens t
+            JOIN generated_documents d ON t.doc_id = d.id
+            WHERE t.access_token = %s
+        ''', (access_token,))
         
-        doc = cur.fetchone()
+        result = cur.fetchone()
+        
+        if not result:
+            cur.close()
+            conn.close()
+            return jsonify({'error': 'Nieprawidłowy lub wygasły link'}), 404
+        
+        # Check expiration
+        if result['expires_at'] and result['expires_at'] < datetime.now():
+            cur.close()
+            conn.close()
+            return jsonify({'error': 'Link wygasł'}), 403
+        
+        # Check view limit
+        if result['max_views'] and result['view_count'] >= result['max_views']:
+            cur.close()
+            conn.close()
+            return jsonify({'error': 'Przekroczono limit wyświetleń'}), 403
+        
+        # Increment view count
+        cur.execute(
+            'UPDATE doc_access_tokens SET view_count = view_count + 1 WHERE access_token = %s',
+            (access_token,))
+        conn.commit()
+        
         cur.close()
         conn.close()
-        if not doc:
-            return jsonify({'error': 'Document not found'}), 404
+        
         import json
-        data = doc['data']
+        data = result['data']
         if isinstance(data, str):
             data = json.loads(data)
         return jsonify(data), 200
@@ -501,6 +547,15 @@ def save_document_with_token():
              json.dumps(data)))
         doc_id = cur.fetchone()['id']
         
+        # Generate secure access token
+        access_token = secrets.token_urlsafe(48)
+        cur.execute(
+            '''
+            INSERT INTO doc_access_tokens (doc_id, access_token)
+            VALUES (%s, %s)
+            ''',
+            (doc_id, access_token))
+        
         cur.execute(
             'UPDATE tokens SET is_used = TRUE, used_at = CURRENT_TIMESTAMP WHERE id = %s',
             (token_row['id'],))
@@ -508,7 +563,7 @@ def save_document_with_token():
         conn.commit()
         cur.close()
         conn.close()
-        return jsonify({'doc_id': doc_id}), 201
+        return jsonify({'doc_id': doc_id, 'access_token': access_token}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
