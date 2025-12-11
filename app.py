@@ -181,6 +181,86 @@ def admin_page():
     return serve_html('admin.html')
 
 
+# Force create all tables - visit /api/init-db to initialize
+@app.route('/api/init-db', methods=['GET'])
+def force_init_db():
+    try:
+        db_url = os.environ.get('DATABASE_URL')
+        if not db_url:
+            return jsonify({'error': 'DATABASE_URL not set'}), 500
+        
+        conn = psycopg.connect(db_url)
+        cur = conn.cursor()
+        
+        # Users table
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                email VARCHAR(255),
+                has_access BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                is_admin BOOLEAN DEFAULT FALSE
+            )
+        ''')
+        
+        # Generated documents table
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS generated_documents (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id),
+                name VARCHAR(255),
+                surname VARCHAR(255),
+                pesel VARCHAR(11),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                data JSON
+            )
+        ''')
+        
+        # Tokens table
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS tokens (
+                id SERIAL PRIMARY KEY,
+                token VARCHAR(64) UNIQUE NOT NULL,
+                is_used BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                used_at TIMESTAMP,
+                created_by INTEGER REFERENCES users(id)
+            )
+        ''')
+        
+        # Doc access tokens table
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS doc_access_tokens (
+                id SERIAL PRIMARY KEY,
+                doc_id INTEGER REFERENCES generated_documents(id) ON DELETE CASCADE,
+                access_token VARCHAR(128) UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                expires_at TIMESTAMP,
+                max_views INTEGER DEFAULT NULL,
+                view_count INTEGER DEFAULT 0
+            )
+        ''')
+        
+        conn.commit()
+        
+        # Create admin user
+        try:
+            cur.execute(
+                'INSERT INTO users (username, password, has_access, is_admin) VALUES (%s, %s, %s, %s)',
+                ('mamba', 'MangoMango67', True, True))
+            conn.commit()
+        except:
+            pass
+        
+        cur.close()
+        conn.close()
+        return jsonify({'message': 'All tables created successfully!', 'tables': ['users', 'generated_documents', 'tokens', 'doc_access_tokens']}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # Seed database with admin user
 @app.route('/api/seed', methods=['POST'])
 def seed():
