@@ -114,6 +114,7 @@ def init_db():
                 view_count INTEGER DEFAULT 0
             )
         ''')
+        conn.commit()
         print("Doc access tokens table created/verified")
 
         # Seed admin user if not exists
