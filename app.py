@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+import secrets
+import json
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, request, send_file, send_from_directory, Response
 from flask_cors import CORS
@@ -351,7 +353,6 @@ def save_document():
     try:
         conn = get_db()
         cur = conn.cursor()
-        import json
         cur.execute(
             '''
             INSERT INTO generated_documents (user_id, name, surname, pesel, data)
@@ -422,7 +423,6 @@ def get_document_by_token(access_token):
         cur.close()
         conn.close()
         
-        import json
         data = result['data']
         if isinstance(data, str):
             data = json.loads(data)
@@ -500,8 +500,6 @@ def delete_document(doc_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-import secrets
 
 @app.route('/api/admin/tokens', methods=['GET'])
 def get_tokens():
@@ -616,7 +614,6 @@ def save_document_with_token():
             conn.close()
             return jsonify({'error': 'Token already used'}), 400
         
-        import json
         cur.execute(
             '''
             INSERT INTO generated_documents (user_id, name, surname, pesel, data)
