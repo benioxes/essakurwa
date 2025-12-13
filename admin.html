@@ -423,6 +423,13 @@
                         <label>Nazwisko rodowe:</label>
                         <input id="editFamilyName">
                     </div>
+                    <div class="form-group">
+                        <label>URL zdjecia:</label>
+                        <input id="editImage" placeholder="https://...">
+                        <div id="imagePreviewContainer" style="margin-top:10px;text-align:center;">
+                            <img id="editImagePreview" src="" alt="Podglad" style="max-width:150px;max-height:150px;border-radius:8px;display:none;border:1px solid rgba(150,0,255,0.3);">
+                        </div>
+                    </div>
                     <button type="submit" class="action" style="width:100%;padding:12px;margin-top:10px;">Zapisz zmiany</button>
                 </form>
             </div>
@@ -493,6 +500,7 @@
                     const res = await fetch(`${API_URL}/api/auth/create-user`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
+                        credentials: "include",
                         body: JSON.stringify({ username, password })
                     });
                     const data = await res.json();
@@ -513,7 +521,7 @@
 
         async function loadUsers() {
             try {
-                const res = await fetch(`${API_URL}/api/admin/users`);
+                const res = await fetch(`${API_URL}/api/admin/users`, { credentials: "include" });
                 if (!res.ok) throw new Error("Failed to load users");
                 const users = await res.json();
                 document.querySelector("#usersTable tbody").innerHTML = users.map(u => `
@@ -537,7 +545,7 @@
 
         async function loadDocuments() {
             try {
-                const res = await fetch(`${API_URL}/api/admin/documents`);
+                const res = await fetch(`${API_URL}/api/admin/documents`, { credentials: "include" });
                 if (!res.ok) throw new Error("Failed to load documents");
                 const docs = await res.json();
                 document.querySelector("#documentsTable tbody").innerHTML = docs.map(d => `
@@ -564,7 +572,7 @@
 
         async function previewDocument(docId) {
             try {
-                const res = await fetch(`${API_URL}/api/admin/documents/${docId}/access-token`);
+                const res = await fetch(`${API_URL}/api/admin/documents/${docId}/access-token`, { credentials: "include" });
                 if (!res.ok) throw new Error("Failed to get access token");
                 const data = await res.json();
                 const baseUrl = window.location.origin;
@@ -579,7 +587,7 @@
 
         async function editDocument(docId) {
             try {
-                const res = await fetch(`${API_URL}/api/admin/documents/${docId}`);
+                const res = await fetch(`${API_URL}/api/admin/documents/${docId}`, { credentials: "include" });
                 if (!res.ok) throw new Error("Failed to load document");
                 const doc = await res.json();
                 currentEditData = doc.data || {};
@@ -596,9 +604,19 @@
                 document.getElementById("editIssueDate").value = doc.data?.issueDate || '';
                 document.getElementById("editExpiryDate").value = doc.data?.expiryDate || '';
                 document.getElementById("editIssuer").value = doc.data?.issuer || '';
-                document.getElementById("editFatherName").value = doc.data?.fatherName || '';
-                document.getElementById("editMotherName").value = doc.data?.motherName || '';
-                document.getElementById("editFamilyName").value = doc.data?.familyName || '';
+                document.getElementById("editFatherName").value = doc.data?.fatherName || doc.data?.father_name || '';
+                document.getElementById("editMotherName").value = doc.data?.motherName || doc.data?.mother_name || '';
+                document.getElementById("editFamilyName").value = doc.data?.familyName || doc.data?.family_name || '';
+                
+                const imageUrl = doc.data?.image || '';
+                document.getElementById("editImage").value = imageUrl;
+                const preview = document.getElementById("editImagePreview");
+                if (imageUrl) {
+                    preview.src = imageUrl;
+                    preview.style.display = "block";
+                } else {
+                    preview.style.display = "none";
+                }
                 
                 document.getElementById("editModal").classList.add("show");
             } catch (err) {
@@ -629,13 +647,15 @@
                 issuer: document.getElementById("editIssuer").value,
                 fatherName: document.getElementById("editFatherName").value,
                 motherName: document.getElementById("editMotherName").value,
-                familyName: document.getElementById("editFamilyName").value
+                familyName: document.getElementById("editFamilyName").value,
+                image: document.getElementById("editImage").value
             };
             
             try {
                 const res = await fetch(`${API_URL}/api/admin/documents/${docId}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
+                    credentials: "include",
                     body: JSON.stringify(updatedData)
                 });
                 
@@ -661,7 +681,8 @@
             if (!confirm("Na pewno usunac ten dokument?")) return;
             try {
                 const res = await fetch(`${API_URL}/api/admin/documents/${docId}`, {
-                    method: "DELETE"
+                    method: "DELETE",
+                    credentials: "include"
                 });
                 if (res.ok) {
                     loadDocuments();
@@ -676,18 +697,18 @@
 
         async function loadTokens() {
             try {
-                const res = await fetch(`${API_URL}/api/admin/tokens`);
+                const res = await fetch(`${API_URL}/api/admin/tokens`, { credentials: "include" });
                 if (!res.ok) throw new Error("Failed to load tokens");
                 const tokens = await res.json();
                 document.querySelector("#tokensTable tbody").innerHTML = tokens.map(t => `
                     <tr>
                         <td>${t.id}</td>
-                        <td style="font-family:monospace;font-size:0.85rem;">${t.token.substring(0, 8)}...</td>
+                        <td style="font-family:monospace;font-size:0.85rem;">${t.token_prefix || t.token?.substring(0, 8) || '---'}...</td>
                         <td><span class="token-status ${t.is_used ? 'used' : 'active'}">${t.is_used ? 'Uzyty' : 'Aktywny'}</span></td>
                         <td>${new Date(t.created_at).toLocaleDateString("pl-PL")}</td>
                         <td>${t.used_at ? new Date(t.used_at).toLocaleDateString("pl-PL") : '-'}</td>
                         <td>
-                            ${!t.is_used 
+                            ${!t.is_used && t.token
                                 ? `<button class="action" onclick="copyLink('${t.token}')">Kopiuj link</button> `
                                 : ''
                             }
@@ -708,6 +729,7 @@
                 const res = await fetch(`${API_URL}/api/admin/tokens/create`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
+                    credentials: "include",
                     body: JSON.stringify({ count })
                 });
                 if (!res.ok) throw new Error("Failed to create token");
@@ -760,7 +782,8 @@
             if (!confirm("Na pewno usunac ten token?")) return;
             try {
                 const res = await fetch(`${API_URL}/api/admin/tokens/${tokenId}`, {
-                    method: "DELETE"
+                    method: "DELETE",
+                    credentials: "include"
                 });
                 if (res.ok) loadTokens();
             } catch (err) {
@@ -773,6 +796,7 @@
                 const res = await fetch(`${API_URL}/api/admin/users/${userId}/access`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
+                    credentials: "include",
                     body: JSON.stringify({ has_access: hasAccess })
                 });
                 if (res.ok) loadUsers();
@@ -781,13 +805,30 @@
             }
         }
 
-        function logout() {
+        async function logout() {
+            try {
+                await fetch(`${API_URL}/api/auth/logout`, {
+                    method: "POST",
+                    credentials: "include"
+                });
+            } catch (e) {}
             localStorage.removeItem("admin_user_id");
             localStorage.removeItem("admin_username");
             window.location.href = "/admin-login.html";
         }
 
-        fetch(`${API_URL}/api/admin/users`).then(res => {
+        document.getElementById("editImage").addEventListener("input", function() {
+            const url = this.value;
+            const preview = document.getElementById("editImagePreview");
+            if (url && url.startsWith("http")) {
+                preview.src = url;
+                preview.style.display = "block";
+            } else {
+                preview.style.display = "none";
+            }
+        });
+
+        fetch(`${API_URL}/api/admin/users`, { credentials: "include" }).then(res => {
             if (res.status === 401) {
                 window.location.href = "/admin-login.html";
             } else {

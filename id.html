@@ -26,7 +26,7 @@
         async function loadAndDisplay() {
             const API_URL = window.location.origin;
             const urlParams = new URLSearchParams(window.location.search);
-            const accessToken = urlParams.get('access');
+            const accessToken = urlParams.get('access') || urlParams.get('access_token');
 
             if (accessToken) {
                 try {

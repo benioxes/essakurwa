@@ -37,13 +37,28 @@ Application for generating Polish ID cards (mObywatel) with authentication and a
 
 ### Database Tables
 1. `users` - User accounts:
-   - `id`, `username`, `password`, `email`, `has_access`, `is_admin`, `created_at`
+   - `id`, `username`, `password` (bcrypt hashed), `email`, `has_access`, `is_admin`, `created_at`, `failed_attempts`, `locked_until`
 
 2. `generated_documents` - Generated documents:
-   - `id`, `user_id`, `name`, `surname`, `pesel`, `created_at`, `data` (JSON)
+   - `id`, `user_id`, `name`, `surname`, `pesel`, `created_at`, `data` (JSON with image URL)
 
-3. `tokens` - One-time generation tokens:
-   - `id`, `token`, `is_used`, `created_at`, `used_at`, `created_by`
+3. `tokens` - One-time generation tokens (secure):
+   - `id`, `token_hash` (SHA-256), `token_prefix` (first 8 chars), `is_used`, `created_at`, `used_at`, `expires_at`
+
+4. `doc_access_tokens` - Document access links:
+   - `id`, `doc_id`, `access_token_hash`, `access_token_prefix`, `expires_at`, `max_views`, `view_count`
+
+5. `audit_log` - Security audit log:
+   - `id`, `user_id`, `action`, `details`, `ip_address`, `created_at`
+
+## Security Features
+- **Session-based authentication** (not localStorage)
+- **Bcrypt password hashing**
+- **Rate limiting** on login and sensitive endpoints
+- **Token hashing** (SHA-256) - full tokens never stored
+- **Account lockout** after 5 failed attempts
+- **Audit logging** for admin actions
+- **CSP headers** restricting script/image sources
 
 ## Environment Variables
 - `DATABASE_URL` - PostgreSQL connection (auto-set by Replit)

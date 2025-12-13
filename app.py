@@ -38,7 +38,7 @@ csp = {
     'default-src': "'self'",
     'script-src': ["'self'", "'unsafe-inline'"],
     'style-src': ["'self'", "'unsafe-inline'"],
-    'img-src': ["'self'", "data:", "blob:"],
+    'img-src': ["'self'", "data:", "blob:", "https://i.imgur.com", "https://res.cloudinary.com", "https://*.cloudinary.com", "https:"],
     'font-src': ["'self'", "https://fonts.gstatic.com"],
     'connect-src': "'self'"
 }
@@ -482,8 +482,8 @@ def get_document_by_token(access_token):
             SELECT d.*, t.expires_at, t.max_views, t.view_count
             FROM doc_access_tokens t
             JOIN generated_documents d ON t.doc_id = d.id
-            WHERE t.access_token_hash = %s
-        ''', (token_hash,))
+            WHERE t.access_token_hash = %s OR t.access_token = %s
+        ''', (token_hash, access_token))
         
         result = cur.fetchone()
         
@@ -503,8 +503,8 @@ def get_document_by_token(access_token):
             return jsonify({'error': 'View limit exceeded'}), 403
         
         cur.execute(
-            'UPDATE doc_access_tokens SET view_count = view_count + 1 WHERE access_token_hash = %s',
-            (token_hash,))
+            'UPDATE doc_access_tokens SET view_count = view_count + 1 WHERE access_token_hash = %s OR access_token = %s',
+            (token_hash, access_token))
         conn.commit()
         
         cur.close()
@@ -686,7 +686,7 @@ def validate_token():
         
         conn = get_db()
         cur = conn.cursor(row_factory=dict_row)
-        cur.execute('SELECT * FROM tokens WHERE token_hash = %s', (token_hash_val,))
+        cur.execute('SELECT * FROM tokens WHERE token_hash = %s OR token = %s', (token_hash_val, token))
         token_row = cur.fetchone()
         cur.close()
         conn.close()
@@ -727,7 +727,7 @@ def save_document_with_token():
         conn = get_db()
         cur = conn.cursor(row_factory=dict_row)
         
-        cur.execute('SELECT * FROM tokens WHERE token_hash = %s', (token_hash_val,))
+        cur.execute('SELECT * FROM tokens WHERE token_hash = %s OR token = %s', (token_hash_val, token))
         token_row = cur.fetchone()
         
         if not token_row:
@@ -757,15 +757,13 @@ def save_document_with_token():
         doc_id = cur.fetchone()['id']
         
         access_token = secrets.token_urlsafe(48)
-        access_token_hash = hash_token(access_token)
-        expires = datetime.now() + timedelta(days=30)
         
         cur.execute(
             '''
-            INSERT INTO doc_access_tokens (doc_id, access_token_hash, access_token_prefix, expires_at)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO doc_access_tokens (doc_id, access_token, access_token_hash, access_token_prefix, expires_at)
+            VALUES (%s, %s, %s, %s, %s)
             ''',
-            (doc_id, access_token_hash, access_token[:8], expires))
+            (doc_id, access_token, hash_token(access_token), access_token[:8], datetime.now() + timedelta(days=30)))
         
         cur.execute(
             'UPDATE tokens SET is_used = TRUE, used_at = CURRENT_TIMESTAMP WHERE id = %s',
