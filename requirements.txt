@@ -35,3 +35,11 @@ python-dotenv
 bcrypt
 flask-limiter
 flask-talisman
+bcrypt
+flask
+flask-cors
+flask-limiter
+flask-talisman
+gunicorn
+psycopg
+python-dotenv

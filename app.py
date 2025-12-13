@@ -46,8 +46,7 @@ csp = {
 Talisman(app, 
          content_security_policy=csp,
          force_https=False,
-         session_cookie_secure=False,
-         content_security_policy_nonce_in=['script-src'])
+         session_cookie_secure=False)
 
 
 def hash_password(password):
