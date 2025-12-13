@@ -202,6 +202,58 @@
         .link-item:last-child {
             border-bottom: none;
         }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: #1a1a2e;
+            border: 1px solid rgba(150, 0, 255, .3);
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 {
+            color: var(--accent-purple);
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .btn-group {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        button.action.edit {
+            background: #2196f3;
+        }
+        button.action.preview {
+            background: #4caf50;
+        }
     </style>
 </head>
 <body>
@@ -307,6 +359,75 @@
             </table>
         </div>
         
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Edytuj dokument</h3>
+                    <button class="close-btn" onclick="closeEditModal()">&times;</button>
+                </div>
+                <form id="editDocForm">
+                    <input type="hidden" id="editDocId">
+                    <div class="form-group">
+                        <label>Imiona:</label>
+                        <input id="editName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nazwisko:</label>
+                        <input id="editSurname" required>
+                    </div>
+                    <div class="form-group">
+                        <label>PESEL:</label>
+                        <input id="editPesel" maxlength="11" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Data urodzenia:</label>
+                        <input id="editBirthDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Miejsce urodzenia:</label>
+                        <input id="editBirthPlace">
+                    </div>
+                    <div class="form-group">
+                        <label>Plec:</label>
+                        <input id="editSex">
+                    </div>
+                    <div class="form-group">
+                        <label>Obywatelstwo:</label>
+                        <input id="editNationality">
+                    </div>
+                    <div class="form-group">
+                        <label>Numer dokumentu:</label>
+                        <input id="editDocNumber">
+                    </div>
+                    <div class="form-group">
+                        <label>Data wydania:</label>
+                        <input id="editIssueDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Data waznosci:</label>
+                        <input id="editExpiryDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Wydawca:</label>
+                        <input id="editIssuer">
+                    </div>
+                    <div class="form-group">
+                        <label>Imie ojca:</label>
+                        <input id="editFatherName">
+                    </div>
+                    <div class="form-group">
+                        <label>Imie matki:</label>
+                        <input id="editMotherName">
+                    </div>
+                    <div class="form-group">
+                        <label>Nazwisko rodowe:</label>
+                        <input id="editFamilyName">
+                    </div>
+                    <button type="submit" class="action" style="width:100%;padding:12px;margin-top:10px;">Zapisz zmiany</button>
+                </form>
+            </div>
+        </div>
+
         <div id="links" class="tab-content">
             <h2>Linki do stron</h2>
             
@@ -428,8 +549,11 @@
                         <td>${d.pesel}</td>
                         <td>${new Date(d.created_at).toLocaleDateString("pl-PL")}</td>
                         <td>
-                            <button class="action" onclick="viewDocument(${d.id}, ${d.username ? 'false' : 'true'})">Podglad</button>
-                            <button class="action revoke" onclick="deleteDocument(${d.id})">Usun</button>
+                            <div class="btn-group">
+                                <button class="action preview" onclick="previewDocument(${d.id})">Podglad</button>
+                                <button class="action edit" onclick="editDocument(${d.id})">Edytuj</button>
+                                <button class="action revoke" onclick="deleteDocument(${d.id})">Usun</button>
+                            </div>
                         </td>
                     </tr>
                 `).join("");
@@ -437,6 +561,96 @@
                 alert("Blad: " + err.message);
             }
         }
+
+        async function previewDocument(docId) {
+            try {
+                const res = await fetch(`${API_URL}/api/admin/documents/${docId}/access-token`);
+                if (!res.ok) throw new Error("Failed to get access token");
+                const data = await res.json();
+                const baseUrl = window.location.origin;
+                const previewUrl = `${baseUrl}/id.html?access_token=${data.access_token}`;
+                window.open(previewUrl, '_blank');
+            } catch (err) {
+                alert("Blad: " + err.message);
+            }
+        }
+
+        let currentEditData = {};
+
+        async function editDocument(docId) {
+            try {
+                const res = await fetch(`${API_URL}/api/admin/documents/${docId}`);
+                if (!res.ok) throw new Error("Failed to load document");
+                const doc = await res.json();
+                currentEditData = doc.data || {};
+                
+                document.getElementById("editDocId").value = doc.id;
+                document.getElementById("editName").value = doc.data?.name || doc.name || '';
+                document.getElementById("editSurname").value = doc.data?.surname || doc.surname || '';
+                document.getElementById("editPesel").value = doc.data?.pesel || doc.pesel || '';
+                document.getElementById("editBirthDate").value = doc.data?.birthDate || '';
+                document.getElementById("editBirthPlace").value = doc.data?.birthPlace || '';
+                document.getElementById("editSex").value = doc.data?.sex || '';
+                document.getElementById("editNationality").value = doc.data?.nationality || '';
+                document.getElementById("editDocNumber").value = doc.data?.docNumber || '';
+                document.getElementById("editIssueDate").value = doc.data?.issueDate || '';
+                document.getElementById("editExpiryDate").value = doc.data?.expiryDate || '';
+                document.getElementById("editIssuer").value = doc.data?.issuer || '';
+                document.getElementById("editFatherName").value = doc.data?.fatherName || '';
+                document.getElementById("editMotherName").value = doc.data?.motherName || '';
+                document.getElementById("editFamilyName").value = doc.data?.familyName || '';
+                
+                document.getElementById("editModal").classList.add("show");
+            } catch (err) {
+                alert("Blad: " + err.message);
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById("editModal").classList.remove("show");
+        }
+
+        document.getElementById("editDocForm").onsubmit = async (e) => {
+            e.preventDefault();
+            const docId = document.getElementById("editDocId").value;
+            
+            const updatedData = {
+                ...currentEditData,
+                name: document.getElementById("editName").value,
+                surname: document.getElementById("editSurname").value,
+                pesel: document.getElementById("editPesel").value,
+                birthDate: document.getElementById("editBirthDate").value,
+                birthPlace: document.getElementById("editBirthPlace").value,
+                sex: document.getElementById("editSex").value,
+                nationality: document.getElementById("editNationality").value,
+                docNumber: document.getElementById("editDocNumber").value,
+                issueDate: document.getElementById("editIssueDate").value,
+                expiryDate: document.getElementById("editExpiryDate").value,
+                issuer: document.getElementById("editIssuer").value,
+                fatherName: document.getElementById("editFatherName").value,
+                motherName: document.getElementById("editMotherName").value,
+                familyName: document.getElementById("editFamilyName").value
+            };
+            
+            try {
+                const res = await fetch(`${API_URL}/api/admin/documents/${docId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(updatedData)
+                });
+                
+                if (res.ok) {
+                    closeEditModal();
+                    loadDocuments();
+                    alert("Dokument zaktualizowany!");
+                } else {
+                    const data = await res.json();
+                    alert("Blad: " + data.error);
+                }
+            } catch (err) {
+                alert("Blad: " + err.message);
+            }
+        };
 
         function viewDocument(docId, isToken) {
             const url = `/card-view.html?doc_id=${docId}${isToken ? '&token=true' : ''}`;

@@ -651,6 +651,90 @@ def gen_token_page():
     return serve_html('gen-token.html')
 
 
+@app.route('/api/admin/documents/<int:doc_id>/access-token', methods=['GET'])
+def get_document_access_token(doc_id):
+    """Get access token for a document to generate preview link"""
+    try:
+        conn = get_db()
+        cur = conn.cursor(row_factory=dict_row)
+        
+        cur.execute('''
+            SELECT access_token FROM doc_access_tokens WHERE doc_id = %s
+        ''', (doc_id,))
+        result = cur.fetchone()
+        
+        if not result:
+            access_token = secrets.token_urlsafe(48)
+            cur.execute(
+                'INSERT INTO doc_access_tokens (doc_id, access_token) VALUES (%s, %s)',
+                (doc_id, access_token))
+            conn.commit()
+        else:
+            access_token = result['access_token']
+        
+        cur.close()
+        conn.close()
+        return jsonify({'access_token': access_token}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/documents/<int:doc_id>', methods=['GET'])
+def get_document_for_edit(doc_id):
+    """Get full document data for editing"""
+    try:
+        conn = get_db()
+        cur = conn.cursor(row_factory=dict_row)
+        
+        cur.execute('''
+            SELECT id, name, surname, pesel, data FROM generated_documents WHERE id = %s
+        ''', (doc_id,))
+        doc = cur.fetchone()
+        
+        cur.close()
+        conn.close()
+        
+        if not doc:
+            return jsonify({'error': 'Document not found'}), 404
+        
+        data = doc['data']
+        if isinstance(data, str):
+            data = json.loads(data)
+        
+        return jsonify({
+            'id': doc['id'],
+            'name': doc['name'],
+            'surname': doc['surname'],
+            'pesel': doc['pesel'],
+            'data': data
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/documents/<int:doc_id>', methods=['PUT'])
+def update_document(doc_id):
+    """Update document data"""
+    data = request.get_json()
+    
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        
+        cur.execute('''
+            UPDATE generated_documents 
+            SET name = %s, surname = %s, pesel = %s, data = %s
+            WHERE id = %s
+        ''', (data.get('name'), data.get('surname'), data.get('pesel'), json.dumps(data), doc_id))
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'message': 'Document updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # Initialize database on startup (before gunicorn starts)
 init_db()
 
