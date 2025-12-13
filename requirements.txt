@@ -32,3 +32,6 @@ flask-cors
 gunicorn
 psycopg[binary]
 python-dotenv
+bcrypt
+flask-limiter
+flask-talisman

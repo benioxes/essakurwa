@@ -787,10 +787,15 @@
             window.location.href = "/admin-login.html";
         }
 
-        if (!admin_user_id) {
+        fetch(`${API_URL}/api/admin/users`).then(res => {
+            if (res.status === 401) {
+                window.location.href = "/admin-login.html";
+            } else {
+                loadUsers();
+            }
+        }).catch(() => {
             window.location.href = "/admin-login.html";
-        }
-        loadUsers();
+        });
     </script>
 </body>
 </html>
