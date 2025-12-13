@@ -225,12 +225,17 @@ def init_db():
             conn.commit()
             print("Admin user 'mamba' created with hashed password!")
         else:
-            if not existing[1].startswith('$2'):
-                cur.execute('UPDATE users SET password = %s WHERE username = %s', (hashed_password, 'mamba'))
+            stored_hash = existing[1]
+            if not stored_hash.startswith('$2'):
+                cur.execute('UPDATE users SET password = %s, failed_attempts = 0, locked_until = NULL WHERE username = %s', (hashed_password, 'mamba'))
                 conn.commit()
                 print("Admin password upgraded to bcrypt hash!")
+            elif not verify_password(admin_password, stored_hash):
+                cur.execute('UPDATE users SET password = %s, failed_attempts = 0, locked_until = NULL WHERE username = %s', (hashed_password, 'mamba'))
+                conn.commit()
+                print("Admin password updated from ADMIN_PASSWORD env variable!")
             else:
-                print("Admin user 'mamba' already exists with secure password")
+                print("Admin user 'mamba' already exists with correct password")
         
         cur.close()
         conn.close()
