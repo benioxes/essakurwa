@@ -20,7 +20,7 @@ load_dotenv()
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
-app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
