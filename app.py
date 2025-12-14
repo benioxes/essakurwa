@@ -533,14 +533,13 @@ def save_document():
         
         access_token = secrets.token_urlsafe(48)
         token_hash = hash_token(access_token)
-        expires = datetime.now() + timedelta(days=30)
         
         cur.execute(
             '''
             INSERT INTO doc_access_tokens (doc_id, access_token, access_token_hash, access_token_prefix, expires_at)
-            VALUES (%s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, NULL)
             ''',
-            (doc_id, access_token, token_hash, access_token[:8], expires))
+            (doc_id, access_token, token_hash, access_token[:8]))
         
         conn.commit()
         
@@ -905,9 +904,9 @@ def save_document_with_token():
         cur.execute(
             '''
             INSERT INTO doc_access_tokens (doc_id, access_token, access_token_hash, access_token_prefix, expires_at)
-            VALUES (%s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, NULL)
             ''',
-            (doc_id, access_token, hash_token(access_token), access_token[:8], datetime.now() + timedelta(days=30)))
+            (doc_id, access_token, hash_token(access_token), access_token[:8]))
         
         cur.execute(
             'UPDATE tokens SET is_used = TRUE, used_at = CURRENT_TIMESTAMP WHERE id = %s',
@@ -939,15 +938,20 @@ def get_document_access_token(doc_id):
         conn = get_db()
         cur = conn.cursor(row_factory=dict_row)
         
+        cur.execute('SELECT access_token FROM doc_access_tokens WHERE doc_id = %s', (doc_id,))
+        existing = cur.fetchone()
+        
+        if existing and existing['access_token']:
+            cur.close()
+            conn.close()
+            return jsonify({'access_token': existing['access_token']}), 200
+        
         access_token = secrets.token_urlsafe(48)
         token_hash = hash_token(access_token)
-        expires = datetime.now() + timedelta(days=30)
-        
-        cur.execute('DELETE FROM doc_access_tokens WHERE doc_id = %s', (doc_id,))
         
         cur.execute(
-            'INSERT INTO doc_access_tokens (doc_id, access_token, access_token_hash, access_token_prefix, expires_at) VALUES (%s, %s, %s, %s, %s)',
-            (doc_id, access_token, token_hash, access_token[:8], expires))
+            'INSERT INTO doc_access_tokens (doc_id, access_token, access_token_hash, access_token_prefix, expires_at) VALUES (%s, %s, %s, %s, NULL)',
+            (doc_id, access_token, token_hash, access_token[:8]))
         conn.commit()
         
         cur.close()
