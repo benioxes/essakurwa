@@ -719,7 +719,11 @@ def create_token():
             token = secrets.token_hex(16)
             token_hash_val = hash_token(token)
             
-            if has_token_hash:
+            if has_token_hash and has_token:
+                cur.execute(
+                    'INSERT INTO tokens (token, token_hash, token_prefix, expires_at, is_used) VALUES (%s, %s, %s, %s, %s) RETURNING id',
+                    (token, token_hash_val, token[:8], expires, False))
+            elif has_token_hash:
                 cur.execute(
                     'INSERT INTO tokens (token_hash, token_prefix, expires_at) VALUES (%s, %s, %s) RETURNING id',
                     (token_hash_val, token[:8], expires))
@@ -729,8 +733,8 @@ def create_token():
                     (token, False))
             else:
                 cur.execute(
-                    'INSERT INTO tokens (token_hash, token_prefix, expires_at) VALUES (%s, %s, %s) RETURNING id',
-                    (token_hash_val, token[:8], expires))
+                    'INSERT INTO tokens (token, token_hash, token_prefix, expires_at, is_used) VALUES (%s, %s, %s, %s, %s) RETURNING id',
+                    (token, token_hash_val, token[:8], expires, False))
             
             result = cur.fetchone()
             created_tokens.append({'id': result['id'], 'token': token})
