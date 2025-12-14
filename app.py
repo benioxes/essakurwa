@@ -205,6 +205,10 @@ def init_db():
         
         print("Adding missing columns to tokens table if needed...")
         try:
+            cur.execute("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS token_hash VARCHAR(64)")
+        except:
+            pass
+        try:
             cur.execute("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS token_prefix VARCHAR(8)")
         except:
             pass
@@ -218,6 +222,10 @@ def init_db():
             pass
         try:
             cur.execute("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS created_by INTEGER")
+        except:
+            pass
+        try:
+            cur.execute("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS is_used BOOLEAN DEFAULT FALSE")
         except:
             pass
         conn.commit()
