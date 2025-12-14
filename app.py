@@ -43,7 +43,7 @@ csp = {
     'style-src': ["'self'", "'unsafe-inline'"],
     'img-src': ["'self'", "data:", "blob:", "https://i.imgur.com", "https://res.cloudinary.com", "https://*.cloudinary.com", "https:"],
     'font-src': ["'self'", "https://fonts.gstatic.com"],
-    'connect-src': "'self'"
+    'connect-src': ["'self'", "https://api.cloudinary.com", "https://*.cloudinary.com"]
 }
 
 Talisman(app, 
