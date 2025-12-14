@@ -548,10 +548,10 @@ def save_document():
         
         cur.execute(
             '''
-            INSERT INTO doc_access_tokens (doc_id, access_token_hash, access_token_prefix, expires_at, max_views)
-            VALUES (%s, %s, %s, NULL, NULL)
+            INSERT INTO doc_access_tokens (doc_id, access_token, access_token_hash, access_token_prefix, expires_at, max_views)
+            VALUES (%s, %s, %s, %s, NULL, NULL)
             ''',
-            (doc_id, token_hash, access_token[:8]))
+            (doc_id, access_token, token_hash, access_token[:8]))
         
         conn.commit()
         
@@ -939,10 +939,10 @@ def save_document_with_token():
         
         cur.execute(
             '''
-            INSERT INTO doc_access_tokens (doc_id, access_token_hash, access_token_prefix, expires_at, max_views)
-            VALUES (%s, %s, %s, NULL, NULL)
+            INSERT INTO doc_access_tokens (doc_id, access_token, access_token_hash, access_token_prefix, expires_at, max_views)
+            VALUES (%s, %s, %s, %s, NULL, NULL)
             ''',
-            (doc_id, hash_token(access_token), access_token[:8]))
+            (doc_id, access_token, hash_token(access_token), access_token[:8]))
         
         conn.commit()
         
