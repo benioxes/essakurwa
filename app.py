@@ -580,8 +580,8 @@ def get_document_by_token(access_token):
             SELECT d.*, t.expires_at, t.max_views, t.view_count
             FROM doc_access_tokens t
             JOIN generated_documents d ON t.doc_id = d.id
-            WHERE t.access_token_hash = %s
-        ''', (token_hash,))
+            WHERE t.access_token_hash = %s OR t.access_token = %s
+        ''', (token_hash, access_token))
         
         result = cur.fetchone()
         
@@ -591,8 +591,8 @@ def get_document_by_token(access_token):
             return jsonify({'error': 'Invalid or expired link'}), 404
         
         cur.execute(
-            'UPDATE doc_access_tokens SET view_count = view_count + 1 WHERE access_token_hash = %s',
-            (token_hash,))
+            'UPDATE doc_access_tokens SET view_count = view_count + 1 WHERE access_token_hash = %s OR access_token = %s',
+            (token_hash, access_token))
         conn.commit()
         
         cur.close()
@@ -600,21 +600,33 @@ def get_document_by_token(access_token):
         
         data = result['data']
         if data is None:
-            return jsonify({'error': 'Document data is empty'}), 500
+            return jsonify({
+                'name': result.get('name', ''),
+                'surname': result.get('surname', ''),
+                'pesel': result.get('pesel', '')
+            }), 200
         elif isinstance(data, str):
             try:
                 data = json.loads(data)
             except json.JSONDecodeError as e:
                 print(f"ERROR parsing JSON: {e}")
-                return jsonify({'error': 'Invalid document data format'}), 500
+                return jsonify({
+                    'name': result.get('name', ''),
+                    'surname': result.get('surname', ''),
+                    'pesel': result.get('pesel', '')
+                }), 200
         elif not isinstance(data, dict):
             try:
                 data = dict(data) if data else {}
             except:
-                return jsonify({'error': 'Cannot parse document data'}), 500
+                data = {}
         
-        if not data.get('name') and not data.get('surname'):
-            return jsonify({'error': 'Document missing required fields'}), 500
+        if not data.get('name') and result.get('name'):
+            data['name'] = result['name']
+        if not data.get('surname') and result.get('surname'):
+            data['surname'] = result['surname']
+        if not data.get('pesel') and result.get('pesel'):
+            data['pesel'] = result['pesel']
         
         return jsonify(data), 200
     except Exception as e:
