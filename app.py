@@ -704,15 +704,34 @@ def create_token():
         conn = get_db()
         cur = conn.cursor(row_factory=dict_row)
         
+        cur.execute("""
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'tokens' AND column_name IN ('token_hash', 'token')
+        """)
+        columns = [row['column_name'] for row in cur.fetchall()]
+        has_token_hash = 'token_hash' in columns
+        has_token = 'token' in columns
+        
         created_tokens = []
         expires = datetime.now() + timedelta(days=7)
         
         for _ in range(count):
             token = secrets.token_hex(16)
             token_hash_val = hash_token(token)
-            cur.execute(
-                'INSERT INTO tokens (token_hash, token_prefix, expires_at) VALUES (%s, %s, %s) RETURNING id',
-                (token_hash_val, token[:8], expires))
+            
+            if has_token_hash:
+                cur.execute(
+                    'INSERT INTO tokens (token_hash, token_prefix, expires_at) VALUES (%s, %s, %s) RETURNING id',
+                    (token_hash_val, token[:8], expires))
+            elif has_token:
+                cur.execute(
+                    'INSERT INTO tokens (token, is_used) VALUES (%s, %s) RETURNING id',
+                    (token, False))
+            else:
+                cur.execute(
+                    'INSERT INTO tokens (token_hash, token_prefix, expires_at) VALUES (%s, %s, %s) RETURNING id',
+                    (token_hash_val, token[:8], expires))
+            
             result = cur.fetchone()
             created_tokens.append({'id': result['id'], 'token': token})
         
