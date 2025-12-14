@@ -43,3 +43,12 @@ flask-talisman
 gunicorn
 psycopg
 python-dotenv
+bcrypt
+flask
+flask-cors
+flask-limiter
+flask-talisman
+gunicorn
+psycopg
+psycopg2-binary
+python-dotenv
