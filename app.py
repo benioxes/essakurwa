@@ -217,6 +217,7 @@ def init_db():
 
         admin_password = os.environ.get('ADMIN_PASSWORD', 'MangoMango67')
         hashed_password = hash_password(admin_password)
+        force_reset = os.environ.get('FORCE_ADMIN_RESET', '').lower() in ('true', '1', 'yes')
         
         print("Checking for admin user...")
         cur.execute('SELECT id, password FROM users WHERE username = %s', ('mamba',))
@@ -227,6 +228,10 @@ def init_db():
                        ('mamba', hashed_password, True, True))
             conn.commit()
             print("Admin user 'mamba' created with hashed password!")
+        elif force_reset:
+            cur.execute('UPDATE users SET password = %s, failed_attempts = 0, locked_until = NULL WHERE username = %s', (hashed_password, 'mamba'))
+            conn.commit()
+            print("Admin password FORCE RESET completed!")
         else:
             stored_hash = existing[1]
             if not stored_hash.startswith('$2'):
