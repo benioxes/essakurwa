@@ -203,6 +203,26 @@ def init_db():
         ''')
         print("Tokens table created/verified")
         
+        print("Adding missing columns to tokens table if needed...")
+        try:
+            cur.execute("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS token_prefix VARCHAR(8)")
+        except:
+            pass
+        try:
+            cur.execute("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP")
+        except:
+            pass
+        try:
+            cur.execute("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS used_at TIMESTAMP")
+        except:
+            pass
+        try:
+            cur.execute("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS created_by INTEGER")
+        except:
+            pass
+        conn.commit()
+        print("Tokens table columns verified")
+        
         print("Creating doc_access_tokens table...")
         cur.execute('''
             CREATE TABLE IF NOT EXISTS doc_access_tokens (
@@ -216,6 +236,26 @@ def init_db():
                 view_count INTEGER DEFAULT 0
             )
         ''')
+        
+        print("Adding missing columns to doc_access_tokens table if needed...")
+        try:
+            cur.execute("ALTER TABLE doc_access_tokens ADD COLUMN IF NOT EXISTS access_token_prefix VARCHAR(8)")
+        except:
+            pass
+        try:
+            cur.execute("ALTER TABLE doc_access_tokens ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP")
+        except:
+            pass
+        try:
+            cur.execute("ALTER TABLE doc_access_tokens ADD COLUMN IF NOT EXISTS max_views INTEGER DEFAULT NULL")
+        except:
+            pass
+        try:
+            cur.execute("ALTER TABLE doc_access_tokens ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0")
+        except:
+            pass
+        conn.commit()
+        print("Doc access tokens table columns verified")
         
         print("Creating audit_log table...")
         cur.execute('''
