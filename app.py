@@ -158,6 +158,22 @@ def init_db():
             )
         ''')
         print("Users table created/verified")
+        
+        print("Adding missing columns to users table if needed...")
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_attempts INTEGER DEFAULT 0")
+        except:
+            pass
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP")
+        except:
+            pass
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE")
+        except:
+            pass
+        conn.commit()
+        print("Users table columns verified")
 
         print("Creating generated_documents table...")
         cur.execute('''
