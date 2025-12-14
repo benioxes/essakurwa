@@ -80,3 +80,13 @@ psycopg
 psycopg2-binary
 python-dotenv
 werkzeug
+bcrypt
+flask
+flask-cors
+flask-limiter
+flask-talisman
+gunicorn
+psycopg[binary]
+psycopg2-binary
+python-dotenv
+werkzeug
