@@ -513,6 +513,9 @@ def save_document():
     surname = sanitize_input(data.get('surname'), 100)
     pesel = sanitize_input(data.get('pesel'), 11)
     
+    if not name or not surname:
+        return jsonify({'error': 'Name and surname are required'}), 400
+    
     if not validate_pesel(pesel):
         return jsonify({'error': 'Invalid PESEL format'}), 400
 
@@ -520,7 +523,16 @@ def save_document():
         conn = get_db()
         cur = conn.cursor()
         
-        sanitized_data = {k: sanitize_input(v) if isinstance(v, str) else v for k, v in data.items()}
+        doc_data = {}
+        for key in ['name', 'surname', 'sex', 'birthday', 'pesel', 'mdow_series', 'issue_date', 
+                    'expiry_date', 'father_name', 'mother_name', 'nationality', 'birthPlace',
+                    'birth_country', 'adress1', 'adress2', 'city', 'home_date', 'family_name',
+                    'father_family_name', 'mother_family_name', 'image']:
+            value = data.get(key)
+            if isinstance(value, str):
+                doc_data[key] = sanitize_input(value) if key != 'image' else value
+            else:
+                doc_data[key] = value if value is not None else ''
         
         cur.execute(
             '''
@@ -528,7 +540,7 @@ def save_document():
             VALUES (%s, %s, %s, %s, %s)
             RETURNING id
         ''',
-            (user_id, name, surname, pesel, json.dumps(sanitized_data)))
+            (user_id, name, surname, pesel, json.dumps(doc_data)))
         doc_id = cur.fetchone()[0]
         
         access_token = secrets.token_urlsafe(48)
@@ -536,10 +548,10 @@ def save_document():
         
         cur.execute(
             '''
-            INSERT INTO doc_access_tokens (doc_id, access_token, access_token_hash, access_token_prefix, expires_at)
-            VALUES (%s, %s, %s, %s, NULL)
+            INSERT INTO doc_access_tokens (doc_id, access_token_hash, access_token_prefix, expires_at, max_views)
+            VALUES (%s, %s, %s, NULL, NULL)
             ''',
-            (doc_id, access_token, token_hash, access_token[:8]))
+            (doc_id, token_hash, access_token[:8]))
         
         conn.commit()
         
@@ -556,7 +568,7 @@ def save_document():
 
 
 @app.route('/api/documents/access/<access_token>', methods=['GET'])
-@limiter.limit("30 per minute")
+@limiter.limit("100 per minute")
 def get_document_by_token(access_token):
     try:
         token_hash = hash_token(access_token)
@@ -568,8 +580,8 @@ def get_document_by_token(access_token):
             SELECT d.*, t.expires_at, t.max_views, t.view_count
             FROM doc_access_tokens t
             JOIN generated_documents d ON t.doc_id = d.id
-            WHERE t.access_token_hash = %s OR t.access_token = %s
-        ''', (token_hash, access_token))
+            WHERE t.access_token_hash = %s
+        ''', (token_hash,))
         
         result = cur.fetchone()
         
@@ -578,29 +590,37 @@ def get_document_by_token(access_token):
             conn.close()
             return jsonify({'error': 'Invalid or expired link'}), 404
         
-        if result['expires_at'] and result['expires_at'] < datetime.now():
-            cur.close()
-            conn.close()
-            return jsonify({'error': 'Link expired'}), 403
-        
-        if result['max_views'] and result['view_count'] >= result['max_views']:
-            cur.close()
-            conn.close()
-            return jsonify({'error': 'View limit exceeded'}), 403
-        
         cur.execute(
-            'UPDATE doc_access_tokens SET view_count = view_count + 1 WHERE access_token_hash = %s OR access_token = %s',
-            (token_hash, access_token))
+            'UPDATE doc_access_tokens SET view_count = view_count + 1 WHERE access_token_hash = %s',
+            (token_hash,))
         conn.commit()
         
         cur.close()
         conn.close()
         
         data = result['data']
-        if isinstance(data, str):
-            data = json.loads(data)
+        if data is None:
+            return jsonify({'error': 'Document data is empty'}), 500
+        elif isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except json.JSONDecodeError as e:
+                print(f"ERROR parsing JSON: {e}")
+                return jsonify({'error': 'Invalid document data format'}), 500
+        elif not isinstance(data, dict):
+            try:
+                data = dict(data) if data else {}
+            except:
+                return jsonify({'error': 'Cannot parse document data'}), 500
+        
+        if not data.get('name') and not data.get('surname'):
+            return jsonify({'error': 'Document missing required fields'}), 500
+        
         return jsonify(data), 200
     except Exception as e:
+        print(f"ERROR get_document_by_token: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': 'Failed to retrieve document'}), 500
 
 
@@ -861,6 +881,9 @@ def save_document_with_token():
     surname = sanitize_input(data.get('surname'), 100)
     pesel = sanitize_input(data.get('pesel'), 11)
     
+    if not name or not surname:
+        return jsonify({'error': 'Name and surname are required'}), 400
+    
     if not validate_pesel(pesel):
         return jsonify({'error': 'Invalid PESEL format'}), 400
     
@@ -870,7 +893,7 @@ def save_document_with_token():
         conn = get_db()
         cur = conn.cursor(row_factory=dict_row)
         
-        cur.execute('SELECT * FROM tokens WHERE token_hash = %s OR token = %s', (token_hash_val, token))
+        cur.execute('SELECT * FROM tokens WHERE token_hash = %s OR token = %s FOR UPDATE', (token_hash_val, token))
         token_row = cur.fetchone()
         
         if not token_row:
@@ -881,14 +904,27 @@ def save_document_with_token():
         if token_row['is_used']:
             cur.close()
             conn.close()
-            return jsonify({'error': 'Token already used'}), 400
+            return jsonify({'error': 'Token already used - each token can only be used once'}), 400
         
         if token_row.get('expires_at') and token_row['expires_at'] < datetime.now():
             cur.close()
             conn.close()
             return jsonify({'error': 'Token expired'}), 400
         
-        sanitized_data = {k: sanitize_input(v) if isinstance(v, str) else v for k, v in data.items()}
+        cur.execute(
+            'UPDATE tokens SET is_used = TRUE, used_at = CURRENT_TIMESTAMP WHERE id = %s',
+            (token_row['id'],))
+        
+        doc_data = {}
+        for key in ['name', 'surname', 'sex', 'birthday', 'pesel', 'mdow_series', 'issue_date', 
+                    'expiry_date', 'father_name', 'mother_name', 'nationality', 'birthPlace',
+                    'birth_country', 'adress1', 'adress2', 'city', 'home_date', 'family_name',
+                    'father_family_name', 'mother_family_name', 'image']:
+            value = data.get(key)
+            if isinstance(value, str):
+                doc_data[key] = sanitize_input(value) if key != 'image' else value
+            else:
+                doc_data[key] = value
         
         cur.execute(
             '''
@@ -896,25 +932,21 @@ def save_document_with_token():
             VALUES (%s, %s, %s, %s, %s)
             RETURNING id
             ''',
-            (None, name, surname, pesel, json.dumps(sanitized_data)))
+            (None, name, surname, pesel, json.dumps(doc_data)))
         doc_id = cur.fetchone()['id']
         
         access_token = secrets.token_urlsafe(48)
         
         cur.execute(
             '''
-            INSERT INTO doc_access_tokens (doc_id, access_token, access_token_hash, access_token_prefix, expires_at)
-            VALUES (%s, %s, %s, %s, NULL)
+            INSERT INTO doc_access_tokens (doc_id, access_token_hash, access_token_prefix, expires_at, max_views)
+            VALUES (%s, %s, %s, NULL, NULL)
             ''',
-            (doc_id, access_token, hash_token(access_token), access_token[:8]))
-        
-        cur.execute(
-            'UPDATE tokens SET is_used = TRUE, used_at = CURRENT_TIMESTAMP WHERE id = %s',
-            (token_row['id'],))
+            (doc_id, hash_token(access_token), access_token[:8]))
         
         conn.commit()
         
-        log_action(None, 'CREATE_DOCUMENT_TOKEN', f'Document {doc_id} created with token')
+        log_action(None, 'CREATE_DOCUMENT_TOKEN', f'Document {doc_id} created with one-time token')
         
         cur.close()
         conn.close()
