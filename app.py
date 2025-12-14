@@ -247,6 +247,14 @@ def init_db():
         
         print("Adding missing columns to doc_access_tokens table if needed...")
         try:
+            cur.execute("ALTER TABLE doc_access_tokens ADD COLUMN IF NOT EXISTS access_token TEXT")
+        except:
+            pass
+        try:
+            cur.execute("ALTER TABLE doc_access_tokens ADD COLUMN IF NOT EXISTS access_token_hash VARCHAR(64)")
+        except:
+            pass
+        try:
             cur.execute("ALTER TABLE doc_access_tokens ADD COLUMN IF NOT EXISTS access_token_prefix VARCHAR(8)")
         except:
             pass
@@ -529,10 +537,10 @@ def save_document():
         
         cur.execute(
             '''
-            INSERT INTO doc_access_tokens (doc_id, access_token_hash, access_token_prefix, expires_at)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO doc_access_tokens (doc_id, access_token, access_token_hash, access_token_prefix, expires_at)
+            VALUES (%s, %s, %s, %s, %s)
             ''',
-            (doc_id, token_hash, access_token[:8], expires))
+            (doc_id, access_token, token_hash, access_token[:8], expires))
         
         conn.commit()
         
@@ -542,7 +550,10 @@ def save_document():
         conn.close()
         return jsonify({'doc_id': doc_id, 'access_token': access_token}), 201
     except Exception as e:
-        return jsonify({'error': 'Failed to save document'}), 500
+        print(f"ERROR saving document: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to save document: {str(e)}'}), 500
 
 
 @app.route('/api/documents/access/<access_token>', methods=['GET'])
@@ -879,7 +890,10 @@ def save_document_with_token():
         conn.close()
         return jsonify({'doc_id': doc_id, 'access_token': access_token}), 201
     except Exception as e:
-        return jsonify({'error': 'Failed to save document'}), 500
+        print(f"ERROR saving document with token: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to save document: {str(e)}'}), 500
 
 
 @app.route('/gen-token.html')
@@ -901,8 +915,8 @@ def get_document_access_token(doc_id):
         cur.execute('DELETE FROM doc_access_tokens WHERE doc_id = %s', (doc_id,))
         
         cur.execute(
-            'INSERT INTO doc_access_tokens (doc_id, access_token_hash, access_token_prefix, expires_at) VALUES (%s, %s, %s, %s)',
-            (doc_id, token_hash, access_token[:8], expires))
+            'INSERT INTO doc_access_tokens (doc_id, access_token, access_token_hash, access_token_prefix, expires_at) VALUES (%s, %s, %s, %s, %s)',
+            (doc_id, access_token, token_hash, access_token[:8], expires))
         conn.commit()
         
         cur.close()
