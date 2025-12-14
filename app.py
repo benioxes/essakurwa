@@ -746,7 +746,10 @@ def create_token():
             return jsonify(created_tokens[0]), 201
         return jsonify({'tokens': created_tokens, 'count': len(created_tokens)}), 201
     except Exception as e:
-        return jsonify({'error': 'Failed to create tokens'}), 500
+        print(f"ERROR creating token: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to create tokens: {str(e)}'}), 500
 
 
 @app.route('/api/admin/tokens/<int:token_id>', methods=['DELETE'])
