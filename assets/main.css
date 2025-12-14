@@ -23,7 +23,7 @@ input::-webkit-inner-spin-button {
     --more-open: url('https://i.imgur.com/sLfN9li.png');
     --text: #4aa2fc;
     --font: #ffffff;
-    --font2: black;
+    --font2: #ffffff;
     --background: #111218;
     --background2: #1f2326;
 }
