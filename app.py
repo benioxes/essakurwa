@@ -646,6 +646,37 @@ def update_access(user_id):
         return jsonify({'error': 'Failed to update access'}), 500
 
 
+@app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@require_admin
+def delete_user(user_id):
+    try:
+        admin_id = session.get('admin_id')
+        if user_id == admin_id:
+            return jsonify({'error': 'Cannot delete yourself'}), 400
+        
+        conn = get_db()
+        cur = conn.cursor(row_factory=dict_row)
+        
+        cur.execute('SELECT username, is_admin FROM users WHERE id = %s', (user_id,))
+        user = cur.fetchone()
+        
+        if not user:
+            cur.close()
+            conn.close()
+            return jsonify({'error': 'User not found'}), 404
+        
+        cur.execute('DELETE FROM users WHERE id = %s', (user_id,))
+        conn.commit()
+        
+        log_action(admin_id, 'DELETE_USER', f'Deleted user: {user["username"]} (ID: {user_id})')
+        
+        cur.close()
+        conn.close()
+        return jsonify({'message': 'User deleted'}), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to delete user'}), 500
+
+
 @app.route('/api/admin/documents', methods=['GET'])
 @require_admin
 def get_all_documents():

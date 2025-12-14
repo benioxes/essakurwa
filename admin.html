@@ -531,10 +531,13 @@
                         <td>${u.has_access ? "Tak" : "Nie"}</td>
                         <td>${new Date(u.created_at).toLocaleDateString("pl-PL")}</td>
                         <td>
-                            ${u.has_access 
-                                ? `<button class="action revoke" onclick="updateAccess(${u.id}, false)">Zablokuj</button>`
-                                : `<button class="action" onclick="updateAccess(${u.id}, true)">Daj dostep</button>`
-                            }
+                            <div class="btn-group">
+                                ${u.has_access 
+                                    ? `<button class="action revoke" onclick="updateAccess(${u.id}, false)">Zablokuj</button>`
+                                    : `<button class="action" onclick="updateAccess(${u.id}, true)">Daj dostep</button>`
+                                }
+                                ${!u.is_admin ? `<button class="action revoke" onclick="deleteUser(${u.id}, '${u.username}')">Usun</button>` : ''}
+                            </div>
                         </td>
                     </tr>
                 `).join("");
@@ -800,6 +803,24 @@
                     body: JSON.stringify({ has_access: hasAccess })
                 });
                 if (res.ok) loadUsers();
+            } catch (err) {
+                alert("Blad: " + err.message);
+            }
+        }
+
+        async function deleteUser(userId, username) {
+            if (!confirm(`Na pewno usunac uzytkownika "${username}"?`)) return;
+            try {
+                const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
+                    method: "DELETE",
+                    credentials: "include"
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    loadUsers();
+                } else {
+                    alert("Blad: " + data.error);
+                }
             } catch (err) {
                 alert("Blad: " + err.message);
             }
