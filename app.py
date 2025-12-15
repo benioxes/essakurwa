@@ -572,23 +572,29 @@ def save_document():
 def get_document_by_token(access_token):
     try:
         token_hash = hash_token(access_token)
+        print(f"DEBUG: Looking for document with token hash: {token_hash[:16]}... or raw token: {access_token[:16]}...")
         
         conn = get_db()
         cur = conn.cursor(row_factory=dict_row)
         
         cur.execute('''
-            SELECT d.*, t.expires_at, t.max_views, t.view_count
+            SELECT d.id as doc_id, d.user_id, d.name, d.surname, d.pesel, d.data, d.created_at,
+                   t.expires_at, t.max_views, t.view_count, t.access_token, t.access_token_hash
             FROM doc_access_tokens t
             JOIN generated_documents d ON t.doc_id = d.id
             WHERE t.access_token_hash = %s OR t.access_token = %s
+            LIMIT 1
         ''', (token_hash, access_token))
         
         result = cur.fetchone()
         
         if not result:
+            print(f"DEBUG: No document found for token")
             cur.close()
             conn.close()
             return jsonify({'error': 'Invalid or expired link'}), 404
+        
+        print(f"DEBUG: Found document ID: {result.get('doc_id')}, name: {result.get('name')}, surname: {result.get('surname')}")
         
         cur.execute(
             'UPDATE doc_access_tokens SET view_count = view_count + 1 WHERE access_token_hash = %s OR access_token = %s',
@@ -598,26 +604,32 @@ def get_document_by_token(access_token):
         cur.close()
         conn.close()
         
-        data = result['data']
-        if data is None:
+        raw_data = result.get('data')
+        print(f"DEBUG: Raw data type: {type(raw_data)}, value preview: {str(raw_data)[:100] if raw_data else 'None'}...")
+        
+        if raw_data is None:
+            print(f"DEBUG: Data is None, using fallback fields")
             return jsonify({
                 'name': result.get('name', ''),
                 'surname': result.get('surname', ''),
                 'pesel': result.get('pesel', '')
             }), 200
-        elif isinstance(data, str):
+        
+        if isinstance(raw_data, dict):
+            data = raw_data
+        elif isinstance(raw_data, str):
             try:
-                data = json.loads(data)
+                data = json.loads(raw_data)
             except json.JSONDecodeError as e:
-                print(f"ERROR parsing JSON: {e}")
+                print(f"ERROR parsing JSON: {e}, raw: {raw_data[:200]}")
                 return jsonify({
                     'name': result.get('name', ''),
                     'surname': result.get('surname', ''),
                     'pesel': result.get('pesel', '')
                 }), 200
-        elif not isinstance(data, dict):
+        else:
             try:
-                data = dict(data) if data else {}
+                data = dict(raw_data) if raw_data else {}
             except:
                 data = {}
         
@@ -628,6 +640,7 @@ def get_document_by_token(access_token):
         if not data.get('pesel') and result.get('pesel'):
             data['pesel'] = result['pesel']
         
+        print(f"DEBUG: Returning data with name={data.get('name')}, surname={data.get('surname')}")
         return jsonify(data), 200
     except Exception as e:
         print(f"ERROR get_document_by_token: {e}")
