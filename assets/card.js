@@ -134,22 +134,21 @@ if (data['father_name']) setData("father_name", data['father_name']);
 if (data['mother_name']) setData("mother_name", data['mother_name']);
 if (data['home_date']) {
   document.querySelector(".home_date").innerHTML = data['home_date'];
+} else {
+  if (localStorage.getItem("homeDate") == null){
+    var homeDay = getRandom(1, 25);
+    var homeMonth = getRandom(0, 12);
+    var homeYear = getRandom(2012, 2019);
+
+    var homeDate = new Date();
+    homeDate.setDate(homeDay);
+    homeDate.setMonth(homeMonth);
+    homeDate.setFullYear(homeYear)
+
+    localStorage.setItem("homeDate", homeDate.toLocaleDateString("pl-PL", options))
+  }
+  document.querySelector(".home_date").innerHTML = localStorage.getItem("homeDate");
 }
-
-if (localStorage.getItem("homeDate") == null){
-  var homeDay = getRandom(1, 25);
-  var homeMonth = getRandom(0, 12);
-  var homeYear = getRandom(2012, 2019);
-
-  var homeDate = new Date();
-  homeDate.setDate(homeDay);
-  homeDate.setMonth(homeMonth);
-  homeDate.setFullYear(homeYear)
-
-  localStorage.setItem("homeDate", homeDate.toLocaleDateString("pl-PL", options))
-}
-
-document.querySelector(".home_date").innerHTML = localStorage.getItem("homeDate")
 
 if (data['pesel']) {
   setData("pesel", data['pesel']);

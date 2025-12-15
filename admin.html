@@ -579,7 +579,7 @@
                 if (!res.ok) throw new Error("Failed to get access token");
                 const data = await res.json();
                 const baseUrl = window.location.origin;
-                const previewUrl = `${baseUrl}/card-view.html?access=${data.access_token}`;
+                const previewUrl = `${baseUrl}/id.html?access=${data.access_token}`;
                 window.open(previewUrl, '_blank');
             } catch (err) {
                 alert("Blad: " + err.message);
