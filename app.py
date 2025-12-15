@@ -49,7 +49,8 @@ csp = {
 Talisman(app, 
          content_security_policy=csp,
          force_https=False,
-         session_cookie_secure=False)
+         session_cookie_secure=False,
+         frame_options=False)
 
 
 def hash_password(password):
@@ -117,7 +118,6 @@ def serve_html(filename):
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
         response.headers['X-Content-Type-Options'] = 'nosniff'
-        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         return response
     except Exception as e:
