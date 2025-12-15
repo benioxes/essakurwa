@@ -14,11 +14,23 @@ var ROUTES = {
     card: 'card.html',
 };
 
+function getDocData() {
+    var stored = sessionStorage.getItem('doc_data');
+    if (stored) {
+        try {
+            return JSON.parse(stored);
+        } catch(e) {}
+    }
+    var data = {};
+    for (var key of params.keys()) {
+        data[key] = params.get(key);
+    }
+    return data;
+}
+
 function sendTo(key){
-    var qs = params.toString();
     var file = ROUTES[String(key)] || (String(key).endsWith('.html') ? String(key) : String(key) + '.html');
-    var href = file + (qs ? `?${qs}` : '');
-    location.href = href;
+    location.href = file;
 }
 
 document.querySelectorAll(".bottom_element_grid").forEach((element) => {

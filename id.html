@@ -46,30 +46,32 @@
                         birthday = `${parts[2]}.${parts[1]}.${parts[0]}`;
                     }
                     
-                    const newSearch = new URLSearchParams();
-                    newSearch.set('name', data.name || '');
-                    newSearch.set('surname', data.surname || '');
-                    newSearch.set('sex', data.sex || '');
-                    newSearch.set('birthday', birthday);
-                    newSearch.set('pesel', data.pesel || '');
-                    newSearch.set('mdow_series', data.mdow_series || '');
-                    newSearch.set('issue_date', data.issue_date || '');
-                    newSearch.set('expiry_date', data.expiry_date || '');
-                    newSearch.set('father_name', data.father_name || '');
-                    newSearch.set('mother_name', data.mother_name || '');
-                    newSearch.set('nationality', data.nationality || '');
-                    newSearch.set('birthPlace', data.birthPlace || '');
-                    newSearch.set('countryOfBirth', data.birth_country || '');
-                    newSearch.set('adress1', data.adress1 || '');
-                    newSearch.set('adress2', data.adress2 || '');
-                    newSearch.set('city', data.city || '');
-                    newSearch.set('home_date', data.home_date || '');
-                    newSearch.set('familyName', data.family_name || '');
-                    newSearch.set('fathersFamilyName', data.father_family_name || '');
-                    newSearch.set('mothersFamilyName', data.mother_family_name || '');
-                    newSearch.set('image', data.image || '');
+                    sessionStorage.setItem('doc_data', JSON.stringify({
+                        name: data.name || '',
+                        surname: data.surname || '',
+                        sex: data.sex || '',
+                        birthday: birthday,
+                        pesel: data.pesel || '',
+                        mdow_series: data.mdow_series || '',
+                        issue_date: data.issue_date || '',
+                        expiry_date: data.expiry_date || '',
+                        father_name: data.father_name || '',
+                        mother_name: data.mother_name || '',
+                        nationality: data.nationality || '',
+                        birthPlace: data.birthPlace || '',
+                        countryOfBirth: data.birth_country || '',
+                        adress1: data.adress1 || '',
+                        adress2: data.adress2 || '',
+                        city: data.city || '',
+                        home_date: data.home_date || '',
+                        familyName: data.family_name || '',
+                        fathersFamilyName: data.father_family_name || '',
+                        mothersFamilyName: data.mother_family_name || '',
+                        image: data.image || '',
+                        access_token: accessToken
+                    }));
                     
-                    window.location.search = newSearch.toString();
+                    window.location.href = 'home.html?fromToken=1';
                 } catch (e) {
                     console.error('Error:', e);
                     alert('Błąd podczas ładowania dokumentu');

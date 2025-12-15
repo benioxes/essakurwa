@@ -66,47 +66,75 @@ unfold.addEventListener('click', () => {
 
 })
 
-var data = {}
+var data = typeof getDocData === 'function' ? getDocData() : {};
 
-var params = new URLSearchParams(window.location.search);
-for (var key of params.keys()){
-  data[key] = params.get(key);
+if (!data || Object.keys(data).length === 0) {
+  var params = new URLSearchParams(window.location.search);
+  for (var key of params.keys()) {
+    data[key] = params.get(key);
+  }
 }
 
-document.querySelector(".id_own_image").style.backgroundImage = `url(${data['image']})`;
+if (data['image']) {
+  document.querySelector(".id_own_image").style.backgroundImage = `url(${data['image']})`;
+}
 
-var birthday = data['birthday'];
-var birthdaySplit = birthday.split(".");
-var day = parseInt(birthdaySplit[0]);
-var month = parseInt(birthdaySplit[1]);
-var year = parseInt(birthdaySplit[2]);
+var birthday = data['birthday'] || '';
+var day = 1, month = 1, year = 2000;
+
+if (birthday) {
+  if (birthday.includes('.')) {
+    var birthdaySplit = birthday.split(".");
+    day = parseInt(birthdaySplit[0]) || 1;
+    month = parseInt(birthdaySplit[1]) || 1;
+    year = parseInt(birthdaySplit[2]) || 2000;
+  } else if (birthday.includes('-')) {
+    var birthdaySplit = birthday.split("-");
+    year = parseInt(birthdaySplit[0]) || 2000;
+    month = parseInt(birthdaySplit[1]) || 1;
+    day = parseInt(birthdaySplit[2]) || 1;
+  }
+}
 
 var birthdayDate = new Date();
-birthdayDate.setDate(day)
-birthdayDate.setMonth(month-1)
-birthdayDate.setFullYear(year)
+birthdayDate.setDate(day);
+birthdayDate.setMonth(month - 1);
+birthdayDate.setFullYear(year);
 
 birthday = birthdayDate.toLocaleDateString("pl-PL", options);
 
-var sex = data['sex'];
+var sex = data['sex'] || '';
 
-if (sex === "m"){
-  sex = "Mężczyzna"
-}else if (sex === "k"){
-  sex = "Kobieta"
+if (sex === "m" || sex.toLowerCase() === "mezczyzna") {
+  sex = "Mężczyzna";
+} else if (sex === "k" || sex.toLowerCase() === "kobieta") {
+  sex = "Kobieta";
+} else if (sex.toUpperCase() === "MEZCZYZNA") {
+  sex = "Mężczyzna";
+} else if (sex.toUpperCase() === "KOBIETA") {
+  sex = "Kobieta";
 }
 
-setData("name", data['name'].toUpperCase());
-setData("surname", data['surname'].toUpperCase());
-setData("nationality", data['nationality'].toUpperCase());
+setData("name", (data['name'] || '').toUpperCase());
+setData("surname", (data['surname'] || '').toUpperCase());
+setData("nationality", (data['nationality'] || '').toUpperCase());
 setData("birthday", birthday);
-setData("familyName", data['familyName']);
+setData("familyName", data['familyName'] || '');
 setData("sex", sex);
-setData("fathersFamilyName", data['fathersFamilyName']);
-setData("mothersFamilyName", data['mothersFamilyName']);
-setData("birthPlace", data['birthPlace']);
-setData("countryOfBirth", data['countryOfBirth']);
-setData("adress", "ul. " + data['adress1'] + "<br>" + data['adress2'] + " " + data['city']);
+setData("fathersFamilyName", data['fathersFamilyName'] || '');
+setData("mothersFamilyName", data['mothersFamilyName'] || '');
+setData("birthPlace", data['birthPlace'] || '');
+setData("countryOfBirth", data['countryOfBirth'] || '');
+setData("adress", "ul. " + (data['adress1'] || '') + "<br>" + (data['adress2'] || '') + " " + (data['city'] || ''));
+
+if (data['mdow_series']) setData("mdow_series", data['mdow_series']);
+if (data['issue_date']) setData("issue_date", data['issue_date']);
+if (data['expiry_date']) setData("expiry_date", data['expiry_date']);
+if (data['father_name']) setData("father_name", data['father_name']);
+if (data['mother_name']) setData("mother_name", data['mother_name']);
+if (data['home_date']) {
+  document.querySelector(".home_date").innerHTML = data['home_date'];
+}
 
 if (localStorage.getItem("homeDate") == null){
   var homeDay = getRandom(1, 25);
@@ -123,28 +151,32 @@ if (localStorage.getItem("homeDate") == null){
 
 document.querySelector(".home_date").innerHTML = localStorage.getItem("homeDate")
 
-if (parseInt(year) >= 2000){
-  month = 20 + month;
+if (data['pesel']) {
+  setData("pesel", data['pesel']);
+} else {
+  if (parseInt(year) >= 2000){
+    month = 20 + month;
+  }
+
+  var later;
+
+  if (sex.toLowerCase() === "mężczyzna"){
+    later = "0295"
+  }else{
+    later = "0382"
+  }
+
+  if (day < 10){
+    day = "0" + day
+  }
+
+  if (month < 10){
+    month = "0" + month
+  }
+
+  var pesel = year.toString().substring(2) + month + day + later + "7";
+  setData("pesel", pesel)
 }
-
-var later;
-
-if (sex.toLowerCase() === "mężczyzna"){
-  later = "0295"
-}else{
-  later = "0382"
-}
-
-if (day < 10){
-  day = "0" + day
-}
-
-if (month < 10){
-  month = "0" + month
-}
-
-var pesel = year.toString().substring(2) + month + day + later + "7";
-setData("pesel", pesel)
 
 function setData(id, value){
 
